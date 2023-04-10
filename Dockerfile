@@ -39,12 +39,12 @@ WORKDIR /opt
 RUN git clone https://github.com/AcademySoftwareFoundation/openvdb.git -b v9.1.0
 RUN mkdir openvdb/build \
     && cd openvdb/build \
-    && cmake -DOPENVDB_BUILD_UNITTESTS=ON \
-             -DOPENVDB_BUILD_NANOVDB=ON \
+    && cmake -DOPENVDB_BUILD_NANOVDB=ON \
              -DNANOVDB_BUILD_TOOLS=ON \
              -DNANOVDB_BUILD_EXAMPLES=ON \
              -DNANOVDB_BUILD_BENCHMARK=ON \
-             -DNANOVDB_BUILD_UNITTESTS=ON \
+             # -DOPENVDB_BUILD_UNITTESTS=ON \
+             # -DNANOVDB_BUILD_UNITTESTS=ON \
              .. \
     && make \
     && make install
