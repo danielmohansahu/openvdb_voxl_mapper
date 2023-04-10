@@ -58,13 +58,13 @@ RUN mkdir openvdb/build \
     && cd openvdb/build \
     && cmake -DOPENVDB_BUILD_NANOVDB=ON \
              -DNANOVDB_BUILD_TOOLS=ON \
-             -DNANOVDB_BUILD_EXAMPLES=ON \
              -DNANOVDB_BUILD_BENCHMARK=ON \
+             # -DNANOVDB_BUILD_EXAMPLES=ON \
              # -DOPENVDB_BUILD_UNITTESTS=ON \
              # -DNANOVDB_BUILD_UNITTESTS=ON \
              .. \
-    && make install
+    && make install -j8
 
 # drop into expected workspace
-WORKDIR /home/root/workspace
+WORKDIR /workspace
 CMD bash
