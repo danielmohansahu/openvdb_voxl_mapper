@@ -33,3 +33,6 @@
 
 # Build space / objects
 build/
+
+# VSCode Objects
+*.vscode
