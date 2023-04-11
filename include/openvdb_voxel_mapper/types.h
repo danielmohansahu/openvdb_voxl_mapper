@@ -15,28 +15,51 @@
 namespace ovm
 {
 
-/* Cloud class - individual point attributes are stored as aligned vectors.
-*/
-struct Cloud
+struct Point
 {
-  std::vector<openvdb::Vec3f> xyz;  // XYZ positions in World coordinate frame
-  std::vector<int> labels;          // class label
-  std::vector<float> confidences;   // class confidences
+  openvdb::Vec3f xyz;   // cartesian position in world space
+  int label;            // label identifier
+  float confidence;     // classification confidence [0,1.0]
 
-  // return the size (number of points) 
-  size_t size()
+  Point(const openvdb::Vec3f xyz_, const int label_, const float confidence_)
+   : xyz(xyz_), label(label_), confidence(confidence_) {}
+}; // struct Point
+
+// OpenVDB Point-partitioner compatible Cloud class
+class Cloud
+{
+ public:
+  using ValueType = openvdb::Vec3f;
+  using value_type = openvdb::Vec3f;
+  using PosType = openvdb::Vec3f;
+
+  // expected constructor
+  Cloud() {}
+  explicit Cloud(const std::vector<Point>& data) : _data(data) {}
+
+  // required interface for OpenVDB Point-partitioner
+  size_t size() const { return _data.size(); }
+  void getPos(size_t n, PosType& xyz) const { xyz = _data[n].xyz; }
+  void get(ValueType& value, size_t n) const { value = _data[n].xyz; }
+  void get(ValueType& value, size_t n, openvdb::Index m) const { value = _data[n + m].xyz; }
+
+  // add an individual point into the cloud
+  void insert(const Point& point)
   {
-    assert(xyz.size() == labels.size() && labels.size() == confidences.size());
-    return xyz.size();
+    _data.push_back(point);
   }
 
-  // concatenation with another cloud
+  // add another cloud into this cloud
   void concatenate(const Cloud& other)
   {
-    xyz.insert(xyz.end(), other.xyz.begin(), other.xyz.end());
-    labels.insert(labels.end(), other.labels.begin(), other.labels.end());
-    confidences.insert(confidences.end(), other.confidences.begin(), other.confidences.end());
+    _data.insert(_data.end(), other._data.begin(), other._data.end());
   }
-}; // struct Cloud
+
+ private:
+  // core data
+  std::vector<Point> _data;
+
+}; // Cloud
+
 
 } // namespace ovm

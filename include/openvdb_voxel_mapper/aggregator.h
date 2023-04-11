@@ -36,9 +36,11 @@ class Aggregator
 
   // reset the cloud to a clean slate
   void reset();
-  
+
+  // various render operations - distill 3D VOXL grid into 2.5D maps
+
   // write current cloud to file
-  void write(const std::string& filename);
+  void write(const std::string& filename) const;
 
  private:
   // core cloud object - contains the full cloud data as one-dimensional vectors

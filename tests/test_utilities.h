@@ -19,7 +19,7 @@ namespace ovm_test
 // construct a random cloud, evenly sampled across a sphere
 ovm::Cloud make_random_cloud(const float voxelSize = 0.5,
                              const size_t pointsPerVoxel = 8,
-                             const float radius = 20.0,
+                             const float radius = 50.0,
                              const std::string filename = "")
 {
   // basically copied from "Random Point Generation" example:
@@ -106,9 +106,7 @@ ovm::Cloud make_random_cloud(const float voxelSize = 0.5,
       openvdb::Vec3f pointWorldLocation = points->transform().indexToWorld(indexIter.getCoord().asVec3d() + positionVoxelSpace);
 
       // store this in our raw cloud format (note we don't bother saving it in the cloud, as we're lazy)
-      result.xyz.push_back(pointWorldLocation);
-      result.labels.push_back(0);
-      result.confidences.push_back(1.0);
+      result.insert({pointWorldLocation, 0, 1.0});
     }
   }
 
@@ -123,7 +121,7 @@ ovm::Cloud make_random_cloud(const float voxelSize = 0.5,
 // convenience overload
 ovm::Cloud make_random_cloud(const std::string filename)
 {
-  return make_random_cloud(0.5, 8, 20.0, filename);
+  return make_random_cloud(0.5, 8, 50.0, filename);
 }
 
 } // namespace ovm_test
