@@ -20,7 +20,7 @@ namespace ovm
 struct Cloud
 {
   std::vector<openvdb::Vec3f> xyz;  // XYZ positions in World coordinate frame
-  std::vector<size_t> labels;       // class label
+  std::vector<int> labels;          // class label
   std::vector<float> confidences;   // class confidences
 
   // return the size (number of points) 

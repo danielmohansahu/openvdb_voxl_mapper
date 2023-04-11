@@ -19,6 +19,9 @@ namespace ovm
 Aggregator::Aggregator(const AggregatorOptions options)
  : _options(options)
 {
+  // initialize OpenVDB
+  openvdb::initialize();
+
   // reset to a clean state
   reset();
 }
@@ -65,9 +68,6 @@ void Aggregator::write(const std::string& filename)
 {
   using namespace openvdb::tools;
   using namespace openvdb::points;
-  using ConfidenceCodec = FixedPointCodec</*1-byte=*/false, UnitRange>;
-  TypedAttributeArray<float, ConfidenceCodec>::registerType();
-  TypedAttributeArray<size_t, NullCodec>::registerType();
 
   // Create a VDB file object and write out the grid.
   if (_index_grid)
@@ -84,20 +84,18 @@ void Aggregator::write(const std::string& filename)
     // storage requirements down from 4-bytes to just 1-byte per value. This is
     // only possible because accuracy of the radius is not that important to us
     // and the values are always within unit range (0.0 => 1.0).
-    openvdb::NamePair confidenceAttribute = TypedAttributeArray<float, ConfidenceCodec>::attributeType();
-    appendAttribute(grid->tree(), "confidence", confidenceAttribute);
+    appendAttribute(grid->tree(), "confidence", TypedAttributeArray<float>::attributeType());
 
     // Populate the "confidence" attribute on the points
     populateAttribute<PointDataTree, PointIndexTree, PointAttributeVector<float>>(
       grid->tree(), _index_grid->tree(), "confidence", PointAttributeVector<float>(_cloud.confidences));
 
     // Append a "label" attribute to the grid to hold the label.
-    openvdb::NamePair labelAttribute = TypedAttributeArray<size_t, NullCodec>::attributeType();
-    appendAttribute(grid->tree(), "label", labelAttribute);
+    appendAttribute(grid->tree(), "label", TypedAttributeArray<int>::attributeType());
 
     // Populate the "confidence" attribute on the points
-    populateAttribute<PointDataTree, PointIndexTree, PointAttributeVector<size_t>>(
-      grid->tree(), _index_grid->tree(), "label", PointAttributeVector<size_t>(_cloud.labels));
+    populateAttribute<PointDataTree, PointIndexTree, PointAttributeVector<int>>(
+      grid->tree(), _index_grid->tree(), "label", PointAttributeVector<int>(_cloud.labels));
 
     // although our internal representation is a mapping from VOXEL -> index,
     //  we convert to a full PointDataGrid when saving.

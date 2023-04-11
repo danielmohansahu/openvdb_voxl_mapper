@@ -9,8 +9,6 @@
 
 int main(int argc, char** argv)
 {
-  openvdb::initialize();
-
   // construct an aggregator
   ovm::AggregatorOptions opts;
   ovm::Aggregator agg {opts};
