@@ -3,6 +3,8 @@
  * Base types used throughout this codebase.
  */
 
+#pragma once
+
 // STL
 #include <vector>
 #include <assert.h>

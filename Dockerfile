@@ -33,6 +33,8 @@ RUN apt-get update \
       cmake \
       libblosc-dev \
       libjemalloc-dev \
+      libglfw3-dev \
+      freeglut3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # install boost (default Ubuntu distribution is too low)
@@ -57,13 +59,15 @@ RUN git clone https://github.com/AcademySoftwareFoundation/openvdb.git -b v10.0.
 RUN mkdir openvdb/build \
     && cd openvdb/build \
     && cmake -DOPENVDB_BUILD_NANOVDB=ON \
+             -DOPENVDB_BUILD_VDB_VIEW=ON \
+             -DOPENVDB_BUILD_VDB_RENDER=ON \
              -DNANOVDB_BUILD_TOOLS=ON \
              -DNANOVDB_BUILD_BENCHMARK=ON \
              # -DNANOVDB_BUILD_EXAMPLES=ON \
              # -DOPENVDB_BUILD_UNITTESTS=ON \
              # -DNANOVDB_BUILD_UNITTESTS=ON \
              .. \
-    && make install -j8
+    && make install -j12
 
 # drop into expected workspace
 WORKDIR /workspace

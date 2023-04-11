@@ -5,6 +5,8 @@
  * options.
  */
 
+#pragma once
+
 // STL
 #include <memory>
 
