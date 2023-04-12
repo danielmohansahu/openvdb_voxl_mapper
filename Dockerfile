@@ -35,6 +35,7 @@ RUN apt-get update \
       libjemalloc-dev \
       libglfw3-dev \
       freeglut3-dev \
+      libeigen3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # install boost (default Ubuntu distribution is too low)
@@ -63,7 +64,9 @@ RUN mkdir openvdb/build \
              -DOPENVDB_BUILD_VDB_RENDER=ON \
              -DNANOVDB_BUILD_TOOLS=ON \
              -DNANOVDB_BUILD_BENCHMARK=ON \
-             # -DNANOVDB_BUILD_EXAMPLES=ON \
+             -DNANOVDB_USE_CUDA=ON \
+             -DNANOVDB_USE_OPENVDB=ON \
+             -DNANOVDB_BUILD_EXAMPLES=ON \
              # -DOPENVDB_BUILD_UNITTESTS=ON \
              # -DNANOVDB_BUILD_UNITTESTS=ON \
              .. \

@@ -10,6 +10,9 @@
 // OpenVDB
 #include <openvdb/points/PointConversion.h>
 
+// OVM
+#include <openvdb_voxel_mapper/operations/ground_plane_extraction.hpp>
+
 namespace ovm
 {
 
@@ -42,12 +45,8 @@ void Aggregator<PointT>::insert(const Cloud<PointT>& cloud)
   // update class variables
   std::cout << "Performing lazy initialization of Aggregator." << std::endl;
   
-  // calculate the (very rough) voxel size
-  const auto voxel_size = computeVoxelSize(_cloud, _options.points_per_voxel);
-  std::cout << "  voxel size: " << voxel_size << std::endl;
-  
   // construct transform (mapping from world space (xyz) to index space (ijk))
-  _transform = Transform::createLinearTransform(voxel_size);
+  _transform = Transform::createLinearTransform(_options.voxel_size);
 
   // instantiate index grid (supports determining index of point associated with real-world xyz location)
   _index_grid = createPointIndexGrid<PointIndexGrid>(_cloud, *_transform);
@@ -81,20 +80,8 @@ void Aggregator<PointT>::write(const std::string& filename) const
     grid->setName("AggregatePoints");
     openvdb::io::File(filename).write({grid});
 
-    // // Iterate over all the leaf nodes in the grid.
-    // for (auto leafIter = _index_grid->tree().beginLeaf(); leafIter; ++leafIter) {
-    //   // Iterate over active indices in the leaf.
-    //   for (auto idx : leafIter->indices()) {
-    //     // Retrieve point at this index
-    //     const auto& pt = _cloud.getPoint(idx);
-
-    //     // Verify the index, world-space position and radius of the point.
-    //     std::cout << "* PointIndex=[" << idx << "] ";
-    //     std::cout << "WorldPosition=" << pt.xyz << " ";
-    //     std::cout << "Label=" << pt.label << " ";
-    //     std::cout << "Confidence=" << pt.confidence << std::endl;
-    //   }
-    // }
+    // test 
+    operations::ground_plane_extraction_geometric(_index_grid, _cloud);
   }
 }
 

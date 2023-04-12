@@ -21,8 +21,7 @@ namespace ovm
 
 struct AggregatorOptions
 {
-  size_t points_per_voxel {8};
-
+  float voxel_size {0.5};    // desired voxel size (m)
 }; // struct AggregatorOptions
 
 template <typename PointT>

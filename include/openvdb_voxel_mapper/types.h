@@ -9,11 +9,17 @@
 #include <vector>
 #include <assert.h>
 
+// Eigen
+#include <Eigen/Core>
+
 // OpenVDB
 #include <openvdb/openvdb.h>
 
 namespace ovm
 {
+
+// our "Map" class is just an eigen matrix
+typedef Eigen::MatrixXf Map;
 
 // simplest supported point type: XYZ coordinates
 struct PointXYZ

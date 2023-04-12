@@ -9,6 +9,7 @@ project (openvdb_voxel_mapping)
 # locate required dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 find_package(OpenVDB REQUIRED COMPONENTS openvdb nanovdb)
+find_package (Eigen3 REQUIRED NO_MODULE)
 
 # required top level options
 set (CMAKE_CXX_STANDARD 17)
@@ -19,9 +20,20 @@ set (CMAKE_CXX_STANDARD_REQUIRED TRUE)
 ###############################################################################
 
 # build core library
-add_library (${PROJECT_NAME} src/aggregator.cpp)
-target_include_directories (${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenVDB_INCLUDE_DIRS})
-target_link_libraries (${PROJECT_NAME} PUBLIC ${OpenVDB_LIBRARIES} OpenVDB::openvdb OpenVDB::nanovdb)
+add_library (${PROJECT_NAME} src/openvdb_voxel_mapper.cpp)
+target_include_directories (
+  ${PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${EIGEN3_INCLUDE_DIRS}
+  ${OpenVDB_INCLUDE_DIRS}
+)
+target_link_libraries (
+  ${PROJECT_NAME} PUBLIC
+  ${OpenVDB_LIBRARIES}
+  OpenVDB::openvdb
+  OpenVDB::nanovdb
+  Eigen3::Eigen
+)
 target_compile_options (${PROJECT_NAME} PRIVATE -Werror -Wall)
 
 ###############################################################################
