@@ -25,6 +25,7 @@ struct AggregatorOptions
 
 }; // struct AggregatorOptions
 
+template <typename PointT>
 class Aggregator
 {
  public:
@@ -32,19 +33,19 @@ class Aggregator
   explicit Aggregator(const AggregatorOptions options = AggregatorOptions());
 
   // insert a new point cloud into the cloud
-  void insert(const Cloud& cloud);
+  void insert(const Cloud<PointT>& cloud);
 
   // reset the cloud to a clean slate
   void reset();
 
-  // various render operations - distill 3D VOXL grid into 2.5D maps
+  // render
 
   // write current cloud to file
   void write(const std::string& filename) const;
 
  private:
   // core cloud object - contains the full cloud data as one-dimensional vectors
-  Cloud _cloud;
+  Cloud<PointT> _cloud;
 
   // openvdb Transform (maps real world space (xyz) to index space (i,j,k))
   openvdb::math::Transform::Ptr _transform;
@@ -58,3 +59,6 @@ class Aggregator
 }; // class Aggregator
 
 } // namespace ovm
+
+// template implementations
+#include "impl/aggregator.hpp"

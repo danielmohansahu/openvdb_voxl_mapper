@@ -16,11 +16,16 @@
 namespace ovm_test
 {
 
+// top level configurable parameters
+#define VOXEL_SIZE 0.5
+#define POINTS_PER_VOXEL 2
+#define SPHERE_RADIUS 25.0
+
 // construct a random cloud, evenly sampled across a sphere
-ovm::Cloud make_random_cloud(const float voxelSize = 0.5,
-                             const size_t pointsPerVoxel = 8,
-                             const float radius = 50.0,
-                             const std::string filename = "")
+ovm::Cloud<ovm::PointXYZLC> make_random_cloud(const float voxelSize = VOXEL_SIZE,
+                                         const size_t pointsPerVoxel = POINTS_PER_VOXEL,
+                                         const float radius = SPHERE_RADIUS,
+                                         const std::string filename = "")
 {
   // basically copied from "Random Point Generation" example:
   //  https://www.openvdb.org/documentation/doxygen/codeExamples.html
@@ -80,7 +85,7 @@ ovm::Cloud make_random_cloud(const float voxelSize = 0.5,
   std::uniform_real_distribution<> distribution(-0.5, 0.5);
 
   // initialize resulting cloud
-  ovm::Cloud result;
+  ovm::Cloud<ovm::PointXYZLC> result;
 
   // Iterate over the leaf nodes in the point tree.
   for (auto leafIter = points->tree().beginLeaf(); leafIter; ++leafIter)
@@ -119,9 +124,9 @@ ovm::Cloud make_random_cloud(const float voxelSize = 0.5,
 }
 
 // convenience overload
-ovm::Cloud make_random_cloud(const std::string filename)
+ovm::Cloud<ovm::PointXYZLC> make_random_cloud(const std::string filename)
 {
-  return make_random_cloud(0.5, 8, 50.0, filename);
+  return make_random_cloud(VOXEL_SIZE, POINTS_PER_VOXEL, SPHERE_RADIUS, filename);
 }
 
 } // namespace ovm_test

@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 {
   // construct an aggregator
   ovm::AggregatorOptions opts;
-  ovm::Aggregator agg {opts};
+  ovm::Aggregator<ovm::PointXYZLC> agg {opts};
 
   // generate and add random clouds
   for (size_t i = 0; i != 10; ++i)

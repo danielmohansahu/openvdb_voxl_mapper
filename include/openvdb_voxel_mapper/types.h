@@ -15,17 +15,33 @@
 namespace ovm
 {
 
-struct Point
+// simplest supported point type: XYZ coordinates
+struct PointXYZ
+{
+  openvdb::Vec3f xyz;   // cartesian position in world space
+  PointXYZ(const openvdb::Vec3f xyz_) : xyz(xyz_) {}
+}; // struct PointXYZ
+
+// XYZ point with classification label
+struct PointXYZL
+{
+  openvdb::Vec3f xyz;   // cartesian position in world space
+  int label;            // label identifier
+  PointXYZL(const openvdb::Vec3f xyz_, const int label_) : xyz(xyz_), label(label_) {}
+}; // struct PointXYZL
+
+// XYZ point with label and confidence
+struct PointXYZLC
 {
   openvdb::Vec3f xyz;   // cartesian position in world space
   int label;            // label identifier
   float confidence;     // classification confidence [0,1.0]
-
-  Point(const openvdb::Vec3f xyz_, const int label_, const float confidence_)
+  PointXYZLC(const openvdb::Vec3f xyz_, const int label_, const float confidence_)
    : xyz(xyz_), label(label_), confidence(confidence_) {}
-}; // struct Point
+}; // struct PointXYZLC
 
 // OpenVDB Point-partitioner compatible Cloud class
+template <typename PointT>
 class Cloud
 {
  public:
@@ -33,18 +49,32 @@ class Cloud
   using value_type = openvdb::Vec3f;
   using PosType = openvdb::Vec3f;
 
-  // expected constructor
-  Cloud() {}
-  explicit Cloud(const std::vector<Point>& data) : _data(data) {}
+  // default empty constructor
+  Cloud() = default;
+
+  // expected constructor from a 1-D vector of points
+  explicit Cloud(const std::vector<PointT>& data) : _data(data) {}
 
   // required interface for OpenVDB Point-partitioner
   size_t size() const { return _data.size(); }
+
+  // required interface for OpenVDB Point-partitioner
   void getPos(size_t n, PosType& xyz) const { xyz = _data[n].xyz; }
+
+  // required interface for OpenVDB Point-partitioner
   void get(ValueType& value, size_t n) const { value = _data[n].xyz; }
+
+  // required interface for OpenVDB Point-partitioner
   void get(ValueType& value, size_t n, openvdb::Index m) const { value = _data[n + m].xyz; }
 
+  // access raw point directly
+  const PointT& getPoint(size_t n) const
+  {
+    return _data[n];
+  }
+
   // add an individual point into the cloud
-  void insert(const Point& point)
+  void insert(const PointT& point)
   {
     _data.push_back(point);
   }
@@ -57,7 +87,7 @@ class Cloud
 
  private:
   // core data
-  std::vector<Point> _data;
+  std::vector<PointT> _data;
 
 }; // Cloud
 
