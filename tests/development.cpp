@@ -17,11 +17,12 @@ int main(int argc, char** argv)
 
   // generate and add random clouds
   std::cout << "Merging clouds into grid..." << std::endl;
-  for (size_t i = 0; i != 50; ++i)
+  for (size_t i = 0; i != 10; ++i)
   {
     const std::string filename = "raw_" + std::to_string(i) + ".vdb";
-    cloud.merge(ovm_test::make_random_cloud(filename, 10000, 0.0, i, 0.0, i, 2.0 * i, 1.0));
+    cloud.merge(ovm_test::make_random_cloud(filename, 2000000, 0.0, 40.0, 0.0, 40.0, i, 10.0));
   }
+  std::cout << "Generated " << cloud.size() << " points." << std::endl;
 
   // extract ground plane from grid
   std::cout << "Extracting ground plane..." << std::endl;
