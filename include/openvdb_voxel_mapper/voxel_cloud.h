@@ -14,6 +14,9 @@
 // OpenVDB
 #include <openvdb/openvdb.h>
 
+// OVM
+#include "conversions.h"
+
 namespace ovm
 {
 

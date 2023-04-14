@@ -50,7 +50,7 @@ ovm::VoxelCloud make_random_cloud(const std::string filename = "", const size_t 
 {
   // generate a random PCL cloud
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  auto generator = uniform_generator<pcl::PointXYZ>();
+  auto generator = normal_generator<pcl::PointXYZ>();
   for (size_t i = 0; i != N; ++i)
     cloud.emplace_back(generator.get());
 

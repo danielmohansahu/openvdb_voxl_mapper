@@ -3,6 +3,9 @@
  * Template implementation of VoxelCloud
  */
 
+// STL
+#include <assert.h>
+
 // OpenVDB
 #include <openvdb/points/PointAttribute.h>
 #include <openvdb/points/PointConversion.h>
@@ -15,23 +18,12 @@ namespace ovm
 
 VoxelCloud::VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud)
 {
-  using namespace openvdb::points;
-  using namespace openvdb::math;
-  using namespace openvdb::tools;
-  // @TODO move this to a separate utility function and add conditional
-  //  attribute support
-
-  // convert from cloud object to a series of vectors (XYZ, Attributes)
-  std::vector<openvdb::Vec3H> positions;
-  positions.reserve(pcl_cloud.size());
-  for (const auto& pt : pcl_cloud)
-    positions.emplace_back(pt.x, pt.y, pt.z);
-
-  PointAttributeVector<openvdb::Vec3H> positionsWrapper(positions);
-  // @TODO breakout voxel size to be configurable
-  Transform::Ptr transform = Transform::createLinearTransform(0.5);
-  PointIndexGrid::Ptr pointIndexGrid = createPointIndexGrid<PointIndexGrid>(positionsWrapper, *transform);
-  _grid = createPointDataGrid<NullCodec, PointDataGrid>(*pointIndexGrid, positionsWrapper, *transform);
+  // perform OpenVDB initialization
+  openvdb::initialize();
+  
+  // construct grid from PCL cloud
+  _grid = ovm::conversions::from_pcl(pcl_cloud);
+  assert(_grid);
   _grid->setName("OVM Grid");
 }
 
