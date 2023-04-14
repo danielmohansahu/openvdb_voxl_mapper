@@ -73,8 +73,8 @@ RUN mkdir openvdb/build \
              -DNANOVDB_USE_CUDA=ON \
              -DNANOVDB_USE_OPENVDB=ON \
              -DNANOVDB_BUILD_EXAMPLES=ON \
-             # -DOPENVDB_BUILD_UNITTESTS=ON \
-             # -DNANOVDB_BUILD_UNITTESTS=ON \
+             -DOPENVDB_BUILD_UNITTESTS=ON \
+             -DNANOVDB_BUILD_UNITTESTS=ON \
              .. \
     && make install -j12
 
