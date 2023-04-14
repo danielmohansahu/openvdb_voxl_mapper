@@ -17,10 +17,10 @@ int main(int argc, char** argv)
 
   // generate and add random clouds
   std::cout << "Merging clouds into grid..." << std::endl;
-  for (size_t i = 0; i != 100; ++i)
+  for (size_t i = 0; i != 50; ++i)
   {
     const std::string filename = "raw_" + std::to_string(i) + ".vdb";
-    cloud.merge(ovm_test::make_random_cloud(filename, 10000, 0.0, 2 * i, 0.0, 2 * i, 10.0 * i, 5.0));
+    cloud.merge(ovm_test::make_random_cloud(filename, 10000, 0.0, i, 0.0, i, 2.0 * i, 1.0));
   }
 
   // extract ground plane from grid
@@ -29,8 +29,8 @@ int main(int argc, char** argv)
   assert(map);
 
   // print out the middle of the map
-  std::cout << "Ground plane of center points: " << std::endl;
-  std::cout << map->map.block<20,20>(map->map.rows() / 2 - 10, map->map.cols() / 2 - 10) << std::endl;
+  std::cout << "Ground plane of 'center' points: " << std::endl;
+  std::cout << map->map.block<10,10>(map->map.rows() / 2 - 5, map->map.cols() / 2 - 5) << std::endl;
 
   // dump cloud to file
   cloud.write("development.vdb");
