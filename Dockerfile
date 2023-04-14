@@ -37,7 +37,12 @@ RUN apt-get update \
       freeglut3-dev \
       libeigen3-dev \
       libpcl-dev \
+      g++-10 \
     && rm -rf /var/lib/apt/lists/*
+
+# switch to GCC 10 by default
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10
 
 # install boost (default Ubuntu distribution is too low)
 WORKDIR /tmp

@@ -37,7 +37,7 @@ target_link_libraries (
   OpenVDB::nanovdb
   Eigen3::Eigen
 )
-target_compile_options (${PROJECT_NAME} PRIVATE -Werror -Wall)
+target_compile_options (${PROJECT_NAME} PUBLIC -Werror -Wall -fconcepts)
 
 ###############################################################################
 #                                 TESTS                                       #
