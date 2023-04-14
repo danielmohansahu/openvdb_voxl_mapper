@@ -5,128 +5,64 @@
 // STL
 #include <string>
 
-// OpenVDB
-#include <openvdb/openvdb.h>
-#include <openvdb/tools/LevelSetSphere.h>
-#include <openvdb/points/PointCount.h>
+// PCL
+#include <pcl/common/generate.h>
 
 // OVM
-#include <openvdb_voxel_mapper/types.h>
+#include <openvdb_voxel_mapper/voxel_cloud.h>
 
 namespace ovm_test
 {
 
-// top level configurable parameters
-#define VOXEL_SIZE 0.5
-#define POINTS_PER_VOXEL 2
-#define SPHERE_RADIUS 25.0
+// default number of points to generate for a cloud
+#define DEFAULT_NUM_POINTS 10000
+
+// construct a PCL Uniform Distribution random point generator
+template <typename PointT>
+auto uniform_generator(const float xmin = -100.0, const float xmax = 100.0,
+                       const float ymin = -100.0, const float ymax = 100.0,
+                       const float zmin = -100.0, const float zmax = 100.0)
+{
+  auto seed = static_cast<std::uint32_t> (time (nullptr));
+  pcl::common::CloudGenerator<PointT, pcl::common::UniformGenerator<float>> gen;
+  gen.setParametersForX ({xmin, xmax, seed++});
+  gen.setParametersForY ({ymin, ymax, seed++});
+  gen.setParametersForZ ({zmin, zmax, seed++});
+  return gen;
+}
+
+// construct a PCL Normal Distribution random point generator
+template <typename PointT>
+auto normal_generator(const float xmean = 0.0, const float xstddev = 25.0,
+                      const float ymean = 0.0, const float ystddev = 25.0,
+                      const float zmean = 0.0, const float zstddev = 25.0)
+{
+  auto seed = static_cast<std::uint32_t> (time (nullptr));
+  pcl::common::CloudGenerator<PointT, pcl::common::NormalGenerator<float>> gen;
+  gen.setParametersForX ({xmean, xstddev, seed++});
+  gen.setParametersForY ({ymean, ystddev, seed++});
+  gen.setParametersForZ ({zmean, zstddev, seed++});
+  return gen;
+}
 
 // construct a random cloud, evenly sampled across a sphere
-ovm::Cloud<ovm::PointXYZLC> make_random_cloud(const float voxelSize = VOXEL_SIZE,
-                                         const size_t pointsPerVoxel = POINTS_PER_VOXEL,
-                                         const float radius = SPHERE_RADIUS,
-                                         const std::string filename = "")
+ovm::VoxelCloud make_random_cloud(const std::string filename = "", const size_t N = DEFAULT_NUM_POINTS)
 {
-  // basically copied from "Random Point Generation" example:
-  //  https://www.openvdb.org/documentation/doxygen/codeExamples.html
-  
-  using namespace openvdb;
-  using namespace openvdb::points;
-  using namespace openvdb::tools;
+  // generate a random PCL cloud
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+  auto generator = uniform_generator<pcl::PointXYZ>();
+  for (size_t i = 0; i != N; ++i)
+    cloud.emplace_back(generator.get());
 
-  // Generate a level set grid.
-  FloatGrid::Ptr sphereGrid = createLevelSetSphere<FloatGrid>(radius, /*center=*/openvdb::Vec3f(0,0,0), voxelSize);
-
-  // Retrieve the number of leaf nodes in the grid.
-  Index leafCount = sphereGrid->tree().leafCount();
-
-  // Use the topology to create a PointDataTree
-  PointDataTree::Ptr pointTree(new PointDataTree(sphereGrid->tree(), 0, openvdb::TopologyCopy()));
-
-  // Ensure all tiles have been voxelized
-  pointTree->voxelizeActiveTiles();
-
-  // Define the position type and codec using fixed-point 16-bit compression.
-  using PositionAttribute = TypedAttributeArray<Vec3f, FixedPointCodec<false>>;
-  NamePair positionType = PositionAttribute::attributeType();
-
-  // Create a new Attribute Descriptor with position only
-  AttributeSet::Descriptor::Ptr descriptor(AttributeSet::Descriptor::create(positionType));
-
-  // Determine the number of points / voxel and points / leaf.
-  Index voxelsPerLeaf = PointDataGrid::TreeType::LeafNodeType::SIZE;
-  Index pointsPerLeaf = pointsPerVoxel * voxelsPerLeaf;
-
-  // Iterate over the leaf nodes in the point tree.
-  for (auto leafIter = pointTree->beginLeaf(); leafIter; ++leafIter)
-  {
-    // Initialize the attributes using the descriptor and point count.
-    leafIter->initializeAttributes(descriptor, pointsPerLeaf);
-    // Initialize the voxel offsets
-    openvdb::Index offset(0);
-    for (openvdb::Index index = 0; index < voxelsPerLeaf; ++index)
-    {
-      offset += pointsPerVoxel;
-      leafIter->setOffsetOn(index, offset);
-    }
-  }
-
-  // Create the points grid.
-  PointDataGrid::Ptr points = PointDataGrid::create(pointTree);
-
-  // Set the name of the grid.
-  points->setName("RandomPoints");
-
-  // Copy the transform from the sphere grid.
-  points->setTransform(sphereGrid->transform().copy());
-
-  // Randomize the point positions.
-  std::mt19937 generator(/*seed=*/0);
-  std::uniform_real_distribution<> distribution(-0.5, 0.5);
-
-  // initialize resulting cloud
-  ovm::Cloud<ovm::PointXYZLC> result;
-
-  // Iterate over the leaf nodes in the point tree.
-  for (auto leafIter = points->tree().beginLeaf(); leafIter; ++leafIter)
-  {
-    // Create an AttributeWriteHandle for position.
-    // Note that the handle only requires the value type, not the codec.
-    AttributeArray& array = leafIter->attributeArray("P");
-    AttributeWriteHandle<openvdb::Vec3f> handle(array);
-
-    // Iterate over the point indices in the leaf.
-    for (auto indexIter = leafIter->beginIndexOn(); indexIter; ++indexIter)
-    {
-      // Compute a new random position (in the range -0.5 => 0.5).
-      openvdb::Vec3f positionVoxelSpace(distribution(generator));
-
-      // Set the position of this point.
-      // As point positions are stored relative to the voxel center, it is
-      // not necessary to convert these voxel space values into
-      // world-space during this process.
-      handle.set(*indexIter, positionVoxelSpace);
-
-      // get this position in world space
-      openvdb::Vec3f pointWorldLocation = points->transform().indexToWorld(indexIter.getCoord().asVec3d() + positionVoxelSpace);
-
-      // store this in our raw cloud format (note we don't bother saving it in the cloud, as we're lazy)
-      result.insert({pointWorldLocation, 0, 1.0});
-    }
-  }
+  // convert from a PCL cloud to a VoxelCloud
+  ovm::VoxelCloud result {cloud};
 
   // save, if given a filename
   if (filename != "")
-    openvdb::io::File(filename).write({points});
+    openvdb::io::File(filename).write({result.grid()});
 
   // return full cloud
   return result;
-}
-
-// convenience overload
-ovm::Cloud<ovm::PointXYZLC> make_random_cloud(const std::string filename)
-{
-  return make_random_cloud(VOXEL_SIZE, POINTS_PER_VOXEL, SPHERE_RADIUS, filename);
 }
 
 } // namespace ovm_test

@@ -25,7 +25,6 @@ set(OPENVDB_TEST_DEPENDENT_LIBS
 ##########################################################################
 
 ##### VDB unit tests
-
 set(UNITTEST_SOURCE_FILES
   main.cc
   TestPointMerge.cc
