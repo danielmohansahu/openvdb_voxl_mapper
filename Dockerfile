@@ -36,6 +36,7 @@ RUN apt-get update \
       libglfw3-dev \
       freeglut3-dev \
       libeigen3-dev \
+      libpcl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # install boost (default Ubuntu distribution is too low)
