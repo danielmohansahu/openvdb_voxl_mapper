@@ -11,9 +11,9 @@
 #ifndef OPENVDB_POINTS_POINT_MERGE_HAS_BEEN_INCLUDED
 #define OPENVDB_POINTS_POINT_MERGE_HAS_BEEN_INCLUDED
 
-#include "PointDataGrid.h"
-#include "PointAttribute.h"
-#include "PointGroup.h"
+#include <openvdb/points/PointDataGrid.h>
+#include <openvdb/points/PointAttribute.h>
+#include <openvdb/points/PointGroup.h>
 
 namespace openvdb {
 OPENVDB_USE_VERSION_NAMESPACE
@@ -898,4 +898,3 @@ inline void mergePoints(PointDataGrid& targetGrid, std::vector<PointDataGrid::Pt
 } // namespace openvdb
 
 #endif //OPENVDB_POINTS_POINT_MERGE_HAS_BEEN_INCLUDED
-

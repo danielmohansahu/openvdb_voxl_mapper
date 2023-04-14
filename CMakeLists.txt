@@ -40,5 +40,4 @@ target_compile_options (${PROJECT_NAME} PRIVATE -Werror -Wall)
 #                                 TESTS                                       #
 ###############################################################################
 
-add_executable (development tests/development.cpp)
-target_link_libraries (development ${PROJECT_NAME})
+add_subdirectory(tests)

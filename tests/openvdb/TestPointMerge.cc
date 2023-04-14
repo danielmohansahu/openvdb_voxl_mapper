@@ -6,7 +6,7 @@
 #include <openvdb/points/PointGroup.h>
 #include <openvdb/points/PointConversion.h>
 #include <openvdb/points/PointCount.h>
-#include <openvdb/points/PointMerge.h>
+#include <openvdb_voxel_mapper/openvdb/PointMerge.h>
 
 #include <gtest/gtest.h>
 
@@ -467,4 +467,3 @@ TEST_F(TestPointMerge, testStringMerge)
     EXPECT_TRUE(std::find(stringValues.begin(), stringValues.end(), "bar") != stringValues.end());
     EXPECT_TRUE(std::find(stringValues.begin(), stringValues.end(), "ijk") != stringValues.end());
 }
-
