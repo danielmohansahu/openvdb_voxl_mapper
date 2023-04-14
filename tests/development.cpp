@@ -16,11 +16,13 @@ int main(int argc, char** argv)
   ovm::VoxelCloud cloud;
 
   // generate and add random clouds
+  // each iteration _roughly_ correspond to 1 frame of a 128X1024 beam
+  //  LIDAR with 120m max range traveling at ~10m/s, for a total of 10 seconds of data
   std::cout << "Merging clouds into grid..." << std::endl;
-  for (size_t i = 0; i != 10; ++i)
+  for (size_t i = 0; i != 100; ++i)
   {
     const std::string filename = "raw_" + std::to_string(i) + ".vdb";
-    cloud.merge(ovm_test::make_random_cloud(filename, 2000000, 0.0, 40.0, 0.0, 40.0, i, 10.0));
+    cloud.merge(ovm_test::make_random_cloud(filename, 200000, 1.0 * i, 40.0, 0.5 * i, 40.0, 0.0, 10.0));
   }
   std::cout << "Generated " << cloud.size() << " points." << std::endl;
 
