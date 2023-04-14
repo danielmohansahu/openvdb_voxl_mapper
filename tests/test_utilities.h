@@ -46,11 +46,15 @@ auto normal_generator(const float xmean = 0.0, const float xstddev = 25.0,
 }
 
 // construct a random cloud, evenly sampled across a sphere
-ovm::VoxelCloud make_random_cloud(const std::string filename = "", const size_t N = DEFAULT_NUM_POINTS)
+ovm::VoxelCloud make_random_cloud(const std::string filename = "",
+                                  const size_t N = DEFAULT_NUM_POINTS,
+                                  const float xmean = 0.0, const float xstddev = 25.0,
+                                  const float ymean = 0.0, const float ystddev = 25.0,
+                                  const float zmean = 0.0, const float zstddev = 25.0)
 {
   // generate a random PCL cloud
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  auto generator = normal_generator<pcl::PointXYZ>();
+  auto generator = normal_generator<pcl::PointXYZ>(xmean, xstddev, ymean, ystddev, zmean, zstddev);
   for (size_t i = 0; i != N; ++i)
     cloud.emplace_back(generator.get());
 

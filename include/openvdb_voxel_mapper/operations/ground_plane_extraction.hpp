@@ -6,51 +6,64 @@
 #pragma once
 
 // STL
-#include <memory>
+#include <concepts>
 #include <optional>
 
 // OVM
 #include "../types.h"
 
-namespace ovm::operations
+// OpenVDB
+#include <openvdb/points/PointAttribute.h>
+
+namespace ovm::ops
 {
 
-template <typename PointT>
-std::optional<Map> ground_plane_extraction_geometric(
-  const openvdb::tools::PointIndexGrid::Ptr& grid,
-  const Cloud<PointT>& cloud)
+// naive implementation of a ground plane extractor:
+//  iterate through all points, taking the minimum Z height
+//  in a given column of voxels as the "GROUND"
+std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::PointDataGrid::Ptr& grid)
 {
+  using namespace openvdb::points;
+  
   // sanity check inputs
-  if (!grid || cloud.size() == 0)
+  if (!grid || grid->empty())
     return std::nullopt;
 
-  // extract transform used by the grid and use it for our map
-  const auto& transform = grid->transform();
+  // initialize output map dimensions and pose from the grid's bounding box
+  const auto bbox = grid->evalActiveVoxelBoundingBox();
+  const auto dimensions = bbox.dim();
+  const auto origin = grid->transform().indexToWorld(bbox.min());
 
-  // initalize output map based on the XY positions of the given grid
-  const auto dimensions = grid->evalActiveVoxelDim();
-  ovm::Map result = ovm::Map::Zero(dimensions.x(), dimensions.y());
+  ovm::Map result;
+  result.map = ovm::Map::MapT::Constant(dimensions.y(), dimensions.x(), NAN);
+  result.pose = ovm::Map::PoseT {origin.x(), origin.y() };
 
-  // iterate through leaf nodes
+  // Iterate over all the leaf nodes in the grid.
   for (auto leaf = grid->tree().cbeginLeaf(); leaf; ++leaf)
   {
-    // iterate over indices of all points in this leaf node
-    for (auto it = leaf->cbeginValueOn(); it; ++it)
-    {
-      // @TODO
-      // // Retrieve point at this index
-      // const auto& pt = cloud.getPoint(idx);
+    // Create a read-only AttributeHandle. Position always uses Vec3f.
+    const AttributeHandle<openvdb::Vec3f> handle(leaf->constAttributeArray("P"));
 
-      // // Verify the index, world-space position and radius of the point.
-      // std::cout << "* PointIndex=[" << idx << "] ";
-      // std::cout << "WorldPosition=" << pt.xyz << " ";
-      // std::cout << "Label=" << pt.label << " ";
-      // std::cout << "Confidence=" << pt.confidence << std::endl;
+    // Iterate over the point indices in the leaf.
+    for (auto idx = leaf->beginIndexOn(); idx; ++idx)
+    {
+      // Extract the voxel-space position of the point.
+      const openvdb::Vec3f voxelPosition = handle.get(*idx);
+
+      // Extract the index-space position of the voxel.
+      const openvdb::Vec3d xyz = idx.getCoord().asVec3d();
+
+      // Compute the world-space position of the point.
+      const openvdb::Vec3f worldPosition = grid->transform().indexToWorld(voxelPosition + xyz);
+      
+      // update 2D map value with the lowest Z value found so far
+      const auto coords = xyz - bbox.min();
+      auto& val = result.map(coords.y(), coords.x());
+      val = (std::isnan(val)) ? worldPosition.z() : std::min(val, worldPosition.z());
     }
   }
 
   return result;
 }
 
-
-} // namespace ovm::operations
+} // namespace ovm::ops
