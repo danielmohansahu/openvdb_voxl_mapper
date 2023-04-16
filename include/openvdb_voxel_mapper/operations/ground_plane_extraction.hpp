@@ -15,6 +15,10 @@
 // OpenVDB
 #include <openvdb/points/PointAttribute.h>
 
+// NanoVDB
+#include <nanovdb/util/OpenToNanoVDB.h>
+#include <nanovdb/util/CudaDeviceBuffer.h>
+
 namespace ovm::ops
 {
 
@@ -58,12 +62,44 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
       
       // update 2D map value with the lowest Z value found so far
       const auto coords = xyz - bbox.min();
-      auto& val = result.map(coords.y(), coords.x());
+      auto& val = result.map.coeffRef(coords.y(), coords.x());
       val = (std::isnan(val)) ? worldPosition.z() : std::min(val, worldPosition.z());
     }
   }
 
   return result;
+}
+
+// naive implementation of a ground plane extractor:
+//  iterate through all points, taking the minimum Z height
+//  in a given column of voxels as the "GROUND"
+// offloaded to GPU
+std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
+{
+  // convert from OpenVDB to NanoVDB grid
+  auto handle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(*grid);
+
+  // Create a CUDA stream to allow for asynchronous copy of pinned CUDA memory.
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+
+  // Copy the NanoVDB grid to the GPU asynchronously
+  handle.deviceUpload(stream, false);
+
+  // // get a (raw) pointer to a NanoVDB grid of value type float on the CPU
+  // auto* grid = handle.grid<float>();
+  // // get a (raw) pointer to a NanoVDB grid of value type float on the GPU
+  // auto* deviceGrid = handle.deviceGrid<float>();
+  // if (!deviceGrid || !grid)
+  //   throw std::runtime_error("GridHandle did not contain a grid with value type float");
+
+  // // Call a host method to print a grid value on both the CPU and GPU
+  // launch_kernels(deviceGrid, grid, stream);
+
+  // Destroy the CUDA stream
+  cudaStreamDestroy(stream);
+  
+  return std::nullopt;
 }
 
 } // namespace ovm::ops
