@@ -3,7 +3,7 @@
 # This image starts with a basic CUDA image and layers
 # ROS and OpenVDB (and NanoVDB) on top.
 
-FROM nvidia/cuda:12.1.0-devel-ubuntu20.04 AS cuda-base
+FROM nvidia/cuda:11.7.1-devel-ubuntu20.04 AS cuda-base
 
 # install common utilities
 RUN apt-get update \
