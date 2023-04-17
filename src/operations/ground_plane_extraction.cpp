@@ -13,9 +13,14 @@
 // NanoVDB
 #include <nanovdb/util/OpenToNanoVDB.h>
 #include <nanovdb/util/CudaDeviceBuffer.h>
+#include <nanovdb/util/GridHandle.h>
 
 // OVM
 #include <openvdb_voxel_mapper/operations/ground_plane_extraction.h>
+
+
+// TEMPORARY
+#include "Image.hpp"
 
 namespace ovm::ops
 {
@@ -60,10 +65,10 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
   return result;
 }
 
-extern "C" void launch_ground_plane_kernel(const nanovdb::NanoGrid<uint32_t>*,
-                                           const nanovdb::NanoGrid<uint32_t>*,
-                                           cudaStream_t stream,
-                                           ovm::Map::MapT& result);
+extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,
+                                           const openvdb::CoordBBox& bbox,
+                                           nanovdb::ImageHandle<nanovdb::CudaDeviceBuffer>& imgHandle,
+                                           cudaStream_t stream);
 
 std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
 {
@@ -72,29 +77,31 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
     return std::nullopt;
 
   // initialize output map dimensions and pose from the grid's bounding box
-  ovm::Map result {grid->evalActiveVoxelBoundingBox(), grid->transform()};
+  const auto bbox = grid->evalActiveVoxelBoundingBox();
+  ovm::Map result {bbox, grid->transform()};
 
-  // convert from OpenVDB to NanoVDB grid
-  auto handle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(*grid);
+  // convert grid from OpenVDB to NanoVDB grid
+  auto gridHandle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(*grid);
+
+  // construct a nanoVDB image (proxy for MAP result)
+  nanovdb::ImageHandle<nanovdb::CudaDeviceBuffer> imgHandle(result.map.cols(), result.map.rows());
 
   // Create a CUDA stream to allow for asynchronous copy of pinned CUDA memory.
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  // Copy the NanoVDB grid to the GPU asynchronously
-  handle.deviceUpload(stream, false);
-
-  // get a (raw) pointer to a NanoVDB grid of value type float on the CPU (uint32_t for PointDataGrid)
-  auto* grid_cpu = handle.grid<uint32_t>();
-  // get a (raw) pointer to a NanoVDB grid of value type float on the GPU (uint32_t for PointDataGrid)
-  auto* grid_gpu = handle.deviceGrid<uint32_t>();
-
-  // sanity check
-  if (!grid_cpu || !grid_gpu)
-    throw std::runtime_error("Failed to access grid of expected type!");
+  // Copy the NanoVDB grid and Image to the GPU asynchronously
+  gridHandle.deviceUpload(stream, false);
+  imgHandle.deviceUpload(stream, false);
 
   // execute core method on the GPU
-  launch_ground_plane_kernel(grid_gpu, grid_cpu, stream, result.map);
+  launch_ground_plane_kernel(gridHandle, bbox, imgHandle, stream);
+
+
+  // @TODO, convert from NanoVDB image to Eigen
+
+
+
 
   // Destroy the CUDA stream
   cudaStreamDestroy(stream);
