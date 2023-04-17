@@ -19,6 +19,12 @@ set (CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set (CMAKE_CUDA_STANDARD 17)
 set (CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 
+# default architecture target
+# @TODO generalize, or upgrade CMAKE to use (all, all-major, native)
+if (NOT CMAKE_CUDA_ARCHITECTURES)
+  set (CMAKE_CUDA_ARCHITECTURES 75)
+endif ()
+
 ###############################################################################
 #                                 DEBUG                                       #
 ###############################################################################
@@ -33,8 +39,14 @@ set (CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 #                                LIBRARY                                      #
 ###############################################################################
 
+set (SOURCE_FILES
+  src/openvdb_voxel_mapper.cpp
+  src/operations/ground_plane_extraction.cpp
+  src/operations/ground_plane_extraction.cu
+)
+
 # build core library
-add_library (${PROJECT_NAME} src/openvdb_voxel_mapper.cpp)
+add_library (${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories (
   ${PROJECT_NAME}
   PUBLIC
@@ -53,7 +65,12 @@ target_link_libraries (
   Eigen3::Eigen
   CUDA::cudart
 )
-target_compile_options (${PROJECT_NAME} PUBLIC -Werror -Wall -fconcepts)
+target_compile_options (
+  ${PROJECT_NAME}
+  PUBLIC
+  "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:--compiler-options -Werror,-Wall>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Werror;-Wall;-fconcepts>"
+)
 
 ###############################################################################
 #                                 TESTS                                       #

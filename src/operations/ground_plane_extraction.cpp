@@ -3,14 +3,9 @@
  * Ground plane extraction operations.
  */
 
-#pragma once
-
 // STL
 #include <concepts>
 #include <optional>
-
-// OVM
-#include "../types.h"
 
 // OpenVDB
 #include <openvdb/points/PointAttribute.h>
@@ -19,12 +14,12 @@
 #include <nanovdb/util/OpenToNanoVDB.h>
 #include <nanovdb/util/CudaDeviceBuffer.h>
 
+// OVM
+#include <openvdb_voxel_mapper/operations/ground_plane_extraction.h>
+
 namespace ovm::ops
 {
 
-// naive implementation of a ground plane extractor:
-//  iterate through all points, taking the minimum Z height
-//  in a given column of voxels as the "GROUND"
 std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::PointDataGrid::Ptr& grid)
 {
   using namespace openvdb::points;
@@ -35,12 +30,7 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
 
   // initialize output map dimensions and pose from the grid's bounding box
   const auto bbox = grid->evalActiveVoxelBoundingBox();
-  const auto dimensions = bbox.dim();
-  const auto origin = grid->transform().indexToWorld(bbox.min());
-
-  ovm::Map result;
-  result.map = ovm::Map::MapT::Constant(dimensions.y(), dimensions.x(), NAN);
-  result.pose = ovm::Map::PoseT {origin.x(), origin.y() };
+  ovm::Map result {bbox, grid->transform()};
 
   // Iterate over all the leaf nodes in the grid.
   for (auto leaf = grid->tree().cbeginLeaf(); leaf; ++leaf)
@@ -70,12 +60,20 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
   return result;
 }
 
-// naive implementation of a ground plane extractor:
-//  iterate through all points, taking the minimum Z height
-//  in a given column of voxels as the "GROUND"
-// offloaded to GPU
+extern "C" void launch_ground_plane_kernel(const nanovdb::NanoGrid<uint32_t>*,
+                                           const nanovdb::NanoGrid<uint32_t>*,
+                                           cudaStream_t stream,
+                                           ovm::Map::MapT& result);
+
 std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
 {
+  // sanity check inputs
+  if (!grid || grid->empty())
+    return std::nullopt;
+
+  // initialize output map dimensions and pose from the grid's bounding box
+  ovm::Map result {grid->evalActiveVoxelBoundingBox(), grid->transform()};
+
   // convert from OpenVDB to NanoVDB grid
   auto handle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(*grid);
 
@@ -86,19 +84,22 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
   // Copy the NanoVDB grid to the GPU asynchronously
   handle.deviceUpload(stream, false);
 
-  // // get a (raw) pointer to a NanoVDB grid of value type float on the CPU
-  // auto* grid = handle.grid<float>();
-  // // get a (raw) pointer to a NanoVDB grid of value type float on the GPU
-  // auto* deviceGrid = handle.deviceGrid<float>();
-  // if (!deviceGrid || !grid)
-  //   throw std::runtime_error("GridHandle did not contain a grid with value type float");
+  // get a (raw) pointer to a NanoVDB grid of value type float on the CPU (uint32_t for PointDataGrid)
+  auto* grid_cpu = handle.grid<uint32_t>();
+  // get a (raw) pointer to a NanoVDB grid of value type float on the GPU (uint32_t for PointDataGrid)
+  auto* grid_gpu = handle.deviceGrid<uint32_t>();
 
-  // // Call a host method to print a grid value on both the CPU and GPU
-  // launch_kernels(deviceGrid, grid, stream);
+  // sanity check
+  if (!grid_cpu || !grid_gpu)
+    throw std::runtime_error("Failed to access grid of expected type!");
+
+  // execute core method on the GPU
+  launch_ground_plane_kernel(grid_gpu, grid_cpu, stream, result.map);
 
   // Destroy the CUDA stream
   cudaStreamDestroy(stream);
   
+  // @TODO!
   return std::nullopt;
 }
 
