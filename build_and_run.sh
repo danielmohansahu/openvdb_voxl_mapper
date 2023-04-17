@@ -10,4 +10,4 @@ IMAGE=openvdb-voxl-aggregator:latest
 docker build -t $IMAGE -f $SCRIPTPATH/Dockerfile .
 
 # drop into a gpu-enabled container via rocker
-rocker --nvidia --x11 --volume $SCRIPTPATH:/workspace -- $IMAGE bash
+rocker --nvidia --x11 --volume $SCRIPTPATH:/workspace -- $IMAGE byobu

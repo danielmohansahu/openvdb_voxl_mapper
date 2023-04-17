@@ -40,17 +40,18 @@ RUN git clone https://github.com/AcademySoftwareFoundation/openvdb.git -b v10.0.
 RUN mkdir openvdb/build \
     && cd openvdb/build \
     && cmake -DOPENVDB_BUILD_NANOVDB=ON \
-             -DOPENVDB_BUILD_VDB_VIEW=ON \
-             -DOPENVDB_BUILD_VDB_RENDER=ON \
              -DNANOVDB_BUILD_TOOLS=ON \
-             -DNANOVDB_BUILD_BENCHMARK=ON \
              -DNANOVDB_USE_CUDA=ON \
              -DNANOVDB_USE_OPENVDB=ON \
-             -DNANOVDB_BUILD_EXAMPLES=ON \
-             -DOPENVDB_BUILD_UNITTESTS=ON \
-             -DNANOVDB_BUILD_UNITTESTS=ON \
+             -DOPENVDB_BUILD_VDB_VIEW=ON \
+             # -DNANOVDB_BUILD_BENCHMARK=ON \
+             # -DOPENVDB_BUILD_VDB_RENDER=ON \
+             # -DNANOVDB_BUILD_EXAMPLES=ON \
+             # -DOPENVDB_BUILD_UNITTESTS=ON \
+             # -DNANOVDB_BUILD_UNITTESTS=ON \
+             -DCMAKE_BUILD_TYPE=Release \
              .. \
-    && make install -j12
+    && make install -j7
 
 # drop into expected workspace
 WORKDIR /workspace
