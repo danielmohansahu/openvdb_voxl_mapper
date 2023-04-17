@@ -18,10 +18,6 @@
 // OVM
 #include <openvdb_voxel_mapper/operations/ground_plane_extraction.h>
 
-
-// TEMPORARY
-#include "Image.hpp"
-
 namespace ovm::ops
 {
 
@@ -67,7 +63,7 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
 
 extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,
                                            const openvdb::CoordBBox& bbox,
-                                           nanovdb::ImageHandle<nanovdb::CudaDeviceBuffer>& imgHandle,
+                                           ovm::Map::MapT& map,
                                            cudaStream_t stream);
 
 std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
@@ -83,31 +79,21 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
   // convert grid from OpenVDB to NanoVDB grid
   auto gridHandle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(*grid);
 
-  // construct a nanoVDB image (proxy for MAP result)
-  nanovdb::ImageHandle<nanovdb::CudaDeviceBuffer> imgHandle(result.map.cols(), result.map.rows());
-
   // Create a CUDA stream to allow for asynchronous copy of pinned CUDA memory.
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  // Copy the NanoVDB grid and Image to the GPU asynchronously
+  // Copy the NanoVDB grid to the GPU asynchronously
   gridHandle.deviceUpload(stream, false);
-  imgHandle.deviceUpload(stream, false);
 
   // execute core method on the GPU
-  launch_ground_plane_kernel(gridHandle, bbox, imgHandle, stream);
-
-
-  // @TODO, convert from NanoVDB image to Eigen
-
-
-
+  launch_ground_plane_kernel(gridHandle, bbox, result.map, stream);
 
   // Destroy the CUDA stream
   cudaStreamDestroy(stream);
   
-  // @TODO!
-  return std::nullopt;
+  // return updated map
+  return result;
 }
 
 } // namespace ovm::ops

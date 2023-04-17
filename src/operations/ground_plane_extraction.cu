@@ -17,15 +17,12 @@
 // OVM
 #include <openvdb_voxel_mapper/types.h>
 
-// TEMPORARY
-#include "Image.hpp"
-
 namespace ovm::ops
 {
 
 // kernel to iterate through a single column of voxels and return the lowest point height
 __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
-                             nanovdb::Image& image,
+                             ovm::Map::MapT* map,
                              const int xmin, const int xmax,
                              const int ymin, const int ymax,
                              const int zmin, const int zmax)
@@ -69,39 +66,38 @@ __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
     while (begin != end)
     {
       // convert from various internal voxel coordinate frames to world frame
-      const nanovdb::Vec3f voxelPosition = *begin++;
-      const nanovdb::Vec3f indexPosition = nanovdb::Vec3f(ijk.offsetBy(0,0,k)) + voxelPosition;
-      const nanovdb::Vec3f pt = grid.indexToWorld(indexPosition);
-      // printf("Point (%f,%f,%f)", pt[0], pt[1], pt[2]);
-      
+      const nanovdb::Vec3f idx = nanovdb::Vec3f(ijk) + *begin++;
+      const nanovdb::Vec3f pt = grid.indexToWorld(idx);
+
       // update minimum Z tracked so far
       min_z = std::isnan(min_z) ? pt[2] : fminf(min_z, pt[2]);
+      // printf("Point (%f,%f,%f)", pt[0], pt[1], pt[2]);
     }
     
     // if we've found a point then break early; no points above this voxel will be smaller, axiomatically
     if (!std::isnan(min_z))
-    {
-      // @TODO update Image
-      // printf("min_z = %f\n", min_z);
       break;
-    }
   }
+
+  // update array element representing the minimum Z value in a column
+  if (!std::isnan(min_z))
+    map->coeffRef(j,i) = min_z;   // access is (row, col)
 }
 
 extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,
                                            const openvdb::CoordBBox& bbox,
-                                           nanovdb::ImageHandle<nanovdb::CudaDeviceBuffer>& imgHandle,
+                                           ovm::Map::MapT& map,
                                            cudaStream_t stream)
 {
+  // sanity check inputs
+  assert(map.rows() == bbox.dim().y() && map.cols() == bbox.dim().x());
+
   // get a (raw) pointer to a NanoVDB grid of value type float on the GPU (uint32_t for PointDataGrid)
   auto* grid = gridHandle.deviceGrid<uint32_t>();
 
-  // get a (raw) pointer to a NanoVDB image on the GPU
-  auto* image = imgHandle.deviceImage();
-
   // sanity check
-  if (!grid || !image)
-    throw std::runtime_error("Failed to load grid and / or image to the GPU.");
+  if (!grid)
+    throw std::runtime_error("Failed to load grid to the GPU.");
 
   // set up GPU block / thread configuration
   auto round = [](int a, int b) { return (a + b - 1) / b; };
@@ -109,7 +105,12 @@ extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::Cu
   const dim3 numBlocks(round(bbox.dim().x(), threadsPerBlock.x), round(bbox.dim().y(), threadsPerBlock.y));
 
   // kernel syntax:  <<<blocks per grid, threads per block, dynamic shared memory per block, stream >>>
-  min_z_kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(*grid, *image, bbox.min().x(), bbox.max().x(), bbox.min().y(), bbox.max().y(), bbox.min().z(), bbox.max().z());
+  min_z_kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
+    *grid, &map,
+    bbox.min().x(), bbox.max().x(),
+    bbox.min().y(), bbox.max().y(),
+    bbox.min().z(), bbox.max().z()
+  );
 }
 
 } // namespace ovm::ops
