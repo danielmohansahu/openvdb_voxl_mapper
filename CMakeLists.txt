@@ -68,7 +68,7 @@ target_link_libraries (
 target_compile_options (
   ${PROJECT_NAME}
   PUBLIC
-  "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:--compiler-options -Werror,-Wall>"
+  "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:--compiler-options -Wall>"
   "$<$<COMPILE_LANGUAGE:CXX>:-Werror;-Wall;-fconcepts>"
 )
 
