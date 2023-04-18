@@ -21,24 +21,45 @@ public:
   void TearDown() override { openvdb::uninitialize(); }
 }; // class TestOVMOperations
 
-// test ground plane extraction via CPU
-TEST_F(TestOVMOperations, testGroundPlaneCPU)
+// test ground plane extraction
+TEST_F(TestOVMOperations, testGroundPlane)
 {
-  // procedure: hardcoded PCL cloud with points in columns
-  //  verify resulting map size (?) position, and all cells
+  // construct a PCL cloud with hardcoded points
+  pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
+  for (int i = -5; i != 5; ++i)
+  {
+    float v = static_cast<float>(i);
+    pcl_cloud.push_back({0, 0, v});   // center column of points
+    pcl_cloud.push_back({v, v, 0});   // everywhere else has Z = 0
+  }
 
-  // I am a stub
-  EXPECT_TRUE(false);
-}
+  // set voxel size to 1.0 meter
+  ovm::Options opts {};
+  opts.voxel_size = 1.0;
 
-// test ground plane extraction via GPU
-TEST_F(TestOVMOperations, testGroundPlaneGPU)
-{
-  // procedure: hardcoded PCL cloud with points in columns
-  //  verify resulting map size (?) position, and all cells
+  // construct a cloud
+  ovm::VoxelCloud cloud(pcl_cloud, opts);
 
-  // I am a stub
-  EXPECT_TRUE(false);
+  // perform (CPU) ground plane extraction
+  const auto cpu_map = ovm::ops::ground_plane_extraction_geometric(cloud.grid());
+  ASSERT_TRUE(cpu_map);
+
+  // perform (GPU) ground plane extraction
+  const auto gpu_map = ovm::ops::ground_plane_extraction_geometric_cuda(cloud.grid());
+  ASSERT_TRUE(gpu_map);
+
+  // compare results
+  EXPECT_EQ(cpu_map->pose, gpu_map->pose);
+  EXPECT_EQ(cpu_map->map, gpu_map->map);
+  
+  // compare each to ground truth result expectation
+  ovm::Map::PoseT gt_pose {0,0};
+  ovm::Map::MapT gt_map {0,0};
+
+  EXPECT_EQ(cpu_map->pose, gt_pose);
+  EXPECT_EQ(gpu_map->pose, gt_pose);
+  EXPECT_EQ(cpu_map->map, gt_map);
+  EXPECT_EQ(gpu_map->map, gt_map);
 }
 
 // test label extraction operation
