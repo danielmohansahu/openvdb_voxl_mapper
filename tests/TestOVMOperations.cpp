@@ -49,17 +49,16 @@ TEST_F(TestOVMOperations, testGroundPlane)
   ASSERT_TRUE(gpu_map);
 
   // compare results
-  EXPECT_EQ(cpu_map->pose, gpu_map->pose);
-  EXPECT_EQ(cpu_map->map, gpu_map->map);
+  EXPECT_TRUE(*cpu_map == *gpu_map);
   
   // compare each to ground truth result expectation
   ovm::Map::PoseT gt_pose {0,0};
   ovm::Map::MapT gt_map {0,0};
 
-  EXPECT_EQ(cpu_map->pose, gt_pose);
-  EXPECT_EQ(gpu_map->pose, gt_pose);
-  EXPECT_EQ(cpu_map->map, gt_map);
-  EXPECT_EQ(gpu_map->map, gt_map);
+  EXPECT_TRUE(cpu_map->pose == gt_pose);
+  EXPECT_TRUE(gpu_map->pose == gt_pose);
+  EXPECT_TRUE(cpu_map->map == gt_map);
+  EXPECT_TRUE(gpu_map->map == gt_map);
 }
 
 // test label extraction operation
