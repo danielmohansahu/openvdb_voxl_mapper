@@ -68,4 +68,32 @@ void VoxelCloud::merge(VoxelCloud& other)
   other.reset();  
 }
 
+void VoxelCloud::remove(const float stamp)
+{
+  // handle edge cases
+  if (this->empty())
+    return;
+
+  // I am a stub
+}
+
+void VoxelCloud::remove_before(const float stamp)
+{
+  // handle edge cases
+  if (this->empty())
+    return;
+
+  // I am a stub
+}
+
+std::pair<float,float> VoxelCloud::time_bounds() const
+{
+  // handle edge cases
+  if (this->empty())
+    return {0,0};
+  
+  // I am a stub
+  return {0,0};
+}
+
 } // namespace ovm

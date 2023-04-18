@@ -50,6 +50,16 @@ class VoxelCloud
   // merge in another point data grid, consuming it in the process
   void merge(VoxelCloud& other);
 
+  // remove a single timestamp from the cloud
+  void remove(const float stamp);
+  
+  // remove all stamps prior to the given, inclusive
+  void remove_before(const float stamp);
+
+  // get min and max timestamps tracked by the cloud
+  //  note : this operation requires a full traversal of the cloud
+  std::pair<float,float> time_bounds() const;
+
   // accessor for core grid - API for operations
   GridT::Ptr grid() { return _grid; }
 
