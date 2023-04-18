@@ -15,6 +15,7 @@
 #include <openvdb/openvdb.h>
 
 // OVM
+#include "types.h"
 #include "conversions.h"
 
 namespace ovm
@@ -25,14 +26,14 @@ class VoxelCloud
  public:
   // convenience typedefs
   using GridT   = openvdb::points::PointDataGrid;
-  using PointT  = pcl::PointXYZ;
 
  public:
-  // empty constructor
-  VoxelCloud() = default;
+  // no empty constructor allowed
+  explicit VoxelCloud(const Options& options = Options()) : _opts(options) {};
 
   // construct from a PCL cloud
-  explicit VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud);
+  template <typename PointT>
+  explicit VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud, const Options& options = Options());
 
   // return whether or not we have data
   bool empty() const;
@@ -58,6 +59,10 @@ class VoxelCloud
  private:
   // core underlying PointDataGrid
   GridT::Ptr _grid;
+
+  // configuration options
+  Options _opts {};
+
 }; // class VoxelCloud
 
 } // namespace ovm

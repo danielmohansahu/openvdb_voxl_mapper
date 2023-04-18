@@ -41,6 +41,7 @@ endif ()
 
 set (SOURCE_FILES
   src/openvdb_voxel_mapper.cpp
+  src/voxel_cloud.cpp
   src/operations/ground_plane_extraction.cpp
   src/operations/ground_plane_extraction.cu
 )
