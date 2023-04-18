@@ -1,4 +1,4 @@
-/* TestVoxelCloud.cpp
+/* TestOVMCore.cpp
  *
  * Unit tests for the VoxelCloud class, which handles
  * common operations on an underlying OpenVDB grid.
