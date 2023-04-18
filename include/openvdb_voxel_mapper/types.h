@@ -35,6 +35,12 @@ struct Map
   MapT map;   // map of arbitrary float values
   PoseT pose; // XY origin of the map
 
+  // convenience equality operator
+  friend inline bool operator==(const Map& lhs, const Map& rhs)
+  {
+    return (lhs.pose == rhs.pose) && (lhs.map == rhs.map);
+  }
+
   // convenience constructor from an openvdb bounding box
   Map(const openvdb::CoordBBox& bbox, const openvdb::math::Transform& tf)
   {
