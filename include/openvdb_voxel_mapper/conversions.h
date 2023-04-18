@@ -2,6 +2,8 @@
  *
  */
 
+#pragma once
+
 // STL
 #include <concepts>
 
