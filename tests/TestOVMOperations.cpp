@@ -20,3 +20,43 @@ public:
   void SetUp() override { openvdb::initialize(); }
   void TearDown() override { openvdb::uninitialize(); }
 }; // class TestOVMOperations
+
+// test ground plane extraction via CPU
+TEST_F(TestOVMOperations, testGroundPlaneCPU)
+{
+  // procedure: hardcoded PCL cloud with points in columns
+  //  verify resulting map size (?) position, and all cells
+
+  // I am a stub
+  EXPECT_TRUE(false);
+}
+
+// test ground plane extraction via GPU
+TEST_F(TestOVMOperations, testGroundPlaneGPU)
+{
+  // procedure: hardcoded PCL cloud with points in columns
+  //  verify resulting map size (?) position, and all cells
+
+  // I am a stub
+  EXPECT_TRUE(false);
+}
+
+// test label extraction operation
+TEST_F(TestOVMOperations, testLabelArgmax)
+{
+  // procedure: hardcoded PCL cloud with points in columns
+  //  verify resulting map size (?) position, and all cells
+
+  // I am a stub
+  EXPECT_TRUE(false);
+}
+
+// test label confidence projection via logodds
+TEST_F(TestOVMOperations, testLabelConfidenceLogodds)
+{
+  // procedure: hardcoded PCL cloud with points in columns
+  //  verify resulting map size (?) position, and all cells
+
+  // I am a stub
+  EXPECT_TRUE(false);
+}

@@ -68,5 +68,19 @@ TEST_F(TestVoxelCloud, testMerge)
 // test subset deletion
 TEST_F(TestVoxelCloud, testDeletion)
 {
+  // first thing to do : make a map of {stamp : num_points}
+
+  // construct a cloud and merge in several different timestamps
+  
+  
+  // delete a single timestamp
+
+  // verify that timestamp is no longer present
+
+
+  // delete all timestamps before a fixed time
+
+  // verify remaining timestamps all exist 
+
   EXPECT_TRUE(false);
 }
