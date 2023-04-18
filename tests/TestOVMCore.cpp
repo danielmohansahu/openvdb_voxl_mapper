@@ -57,7 +57,7 @@ TEST_F(TestVoxelCloud, testMerge)
   const size_t num_clouds = 10;
   for (size_t i = 0; i != num_clouds; ++i)
     // note that we save each raw cloud, for verification
-    cloud.merge(ovm_test::make_random_cloud("", num_points));
+    cloud.merge(ovm::test::make_random_cloud("", num_points));
 
   // verify full cloud has expected number of points
   EXPECT_EQ(cloud.size(), num_clouds * num_points);

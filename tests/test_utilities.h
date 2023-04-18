@@ -11,7 +11,7 @@
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
 
-namespace ovm_test
+namespace ovm::test
 {
 
 // default number of points to generate for a cloud
@@ -45,19 +45,33 @@ auto normal_generator(const float xmean = 0.0, const float xstddev = 25.0,
   return gen;
 }
 
-// construct a random cloud, evenly sampled across a sphere
+// construct a random PCL cloud
+template <typename PointT = pcl::PointXYZ>
+pcl::PointCloud<PointT> make_random_pcl_cloud(const size_t N = DEFAULT_NUM_POINTS,
+                                              const float xmean = 0.0, const float xstddev = 25.0,
+                                              const float ymean = 0.0, const float ystddev = 25.0,
+                                              const float zmean = 0.0, const float zstddev = 25.0)
+{
+  // generate a random PCL cloud
+  pcl::PointCloud<PointT> cloud;
+  auto generator = normal_generator<PointT>(xmean, xstddev, ymean, ystddev, zmean, zstddev);
+  for (size_t i = 0; i != N; ++i)
+    cloud.emplace_back(generator.get());
+  
+  return cloud;
+}
+
+// construct a random VoxelCloud
+template <typename PointT = pcl::PointXYZ>
 ovm::VoxelCloud make_random_cloud(const std::string filename = "",
                                   const size_t N = DEFAULT_NUM_POINTS,
                                   const float xmean = 0.0, const float xstddev = 25.0,
                                   const float ymean = 0.0, const float ystddev = 25.0,
                                   const float zmean = 0.0, const float zstddev = 25.0)
 {
-  // generate a random PCL cloud
-  pcl::PointCloud<pcl::PointXYZ> cloud;
-  auto generator = normal_generator<pcl::PointXYZ>(xmean, xstddev, ymean, ystddev, zmean, zstddev);
-  for (size_t i = 0; i != N; ++i)
-    cloud.emplace_back(generator.get());
-
+  // construct random pcl cloud
+  const auto cloud = make_random_pcl_cloud<PointT>(N, xmean, xstddev, ymean, ystddev, zmean, zstddev);
+  
   // convert from a PCL cloud to a VoxelCloud
   ovm::VoxelCloud result {cloud};
 
@@ -69,4 +83,4 @@ ovm::VoxelCloud make_random_cloud(const std::string filename = "",
   return result;
 }
 
-} // namespace ovm_test
+} // namespace ovm::test

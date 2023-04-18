@@ -35,7 +35,7 @@ int main(int argc, char** argv)
   for (size_t i = 0; i != 100; ++i)
   {
     const std::string filename = "raw_" + std::to_string(i) + ".vdb";
-    cloud.merge(ovm_test::make_random_cloud(filename, 200000, 1.0 * i, 40.0, 0.5 * i, 40.0, 0.0, 10.0));
+    cloud.merge(ovm::test::make_random_cloud(filename, 200000, 1.0 * i, 40.0, 0.5 * i, 40.0, 0.0, 10.0));
   }
 
   // extract ground plane from grid (naive single threaded)
