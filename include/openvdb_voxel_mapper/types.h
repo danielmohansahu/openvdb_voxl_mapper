@@ -23,6 +23,7 @@ struct Options
   int default_label {-1};               // label, if unsupplied
   int free_label {0};                   // label for free space, e.g. ray trace cleared
   std::vector<size_t> ground_labels {}; // labels considered 'ground' for operations
+  std::string name {"OVM Grid"};        // string identifier for the grid
 }; // struct Options
 
 // Axis-aligned map structure used as the final output of Mapping.

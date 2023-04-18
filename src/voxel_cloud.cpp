@@ -91,7 +91,7 @@ std::pair<float,float> VoxelCloud::time_bounds() const
   // handle edge cases
   if (this->empty())
     return {0,0};
-  
+
   // I am a stub
   return {0,0};
 }

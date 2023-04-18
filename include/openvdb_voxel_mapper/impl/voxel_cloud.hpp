@@ -26,7 +26,7 @@ VoxelCloud::VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud, const Options& 
   // construct grid from PCL cloud
   _grid = ovm::conversions::from_pcl(pcl_cloud, _opts);
   assert(_grid);
-  _grid->setName("OVM Grid");
+  _grid->setName(_opts.name);
 }
 
 } // namespace ovm

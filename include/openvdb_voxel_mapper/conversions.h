@@ -49,6 +49,10 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   // initialize position vectors
   std::vector<openvdb::Vec3f> positions; positions.reserve(cloud.size());
 
+  // initialize timestamps
+  //  note we convert from PCL timestamp convention (milliseconds) to ours (seconds)
+  std::vector<float> stamps(cloud.size(), cloud.header.stamp / 1e-3f);
+
   // enable auxiliary attribute vectors
   std::vector<int> labels; labels.reserve(cloud.size());
   std::vector<float> confidences; confidences.reserve(cloud.size());
@@ -77,15 +81,17 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   // construct grid with embedded point data
   auto grid = createPointDataGrid<NullCodec, PointDataGrid>(*pointIndexGrid, positionsWrapper, *transform);
 
+  // Append "stamp" attribute to the grid to hold the timestamp.
+  appendAttribute(grid->tree(), "stamp", TypedAttributeArray<float>::attributeType());
+  populateAttribute(grid->tree(), pointIndexGrid->tree(), "stamp", PointAttributeVector<float>(stamps));
+
   // Append "label" attribute to the grid to hold the label.
   appendAttribute(grid->tree(), "label", TypedAttributeArray<int>::attributeType());
-  PointAttributeVector<int> labelsWrapper(labels);
-  populateAttribute<PointDataTree,PointIndexTree,PointAttributeVector<int>>(grid->tree(), pointIndexGrid->tree(), "label", labelsWrapper);
+  populateAttribute(grid->tree(), pointIndexGrid->tree(), "label", PointAttributeVector<int>(labels));
 
   // Append "confidence" attribute to the grid to hold the confidence.
   appendAttribute(grid->tree(), "confidence", TypedAttributeArray<float>::attributeType());
-  PointAttributeVector<float> confidencesWrapper(confidences);
-  populateAttribute(grid->tree(), pointIndexGrid->tree(), "confidence", confidencesWrapper);
+  populateAttribute(grid->tree(), pointIndexGrid->tree(), "confidence", PointAttributeVector<float>(confidences));
 
   // return constructed grid
   return grid;
@@ -111,6 +117,7 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
   {
     // Extract the position attribute from the leaf by name (P is position).
     AttributeHandle<openvdb::Vec3f> positionHandle(leaf->constAttributeArray("P"));
+    AttributeHandle<float> stampHandle(leaf->constAttributeArray("stamp"));
 
     // Extract the attribute handles as well (may be unused)
     [[maybe_unused]] AttributeHandle<int> labelHandle(leaf->constAttributeArray("label"));
@@ -133,8 +140,15 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
 
       // add point to cloud
       cloud.push_back(std::move(point));
+
+      // update overall cloud timestamp with latest
+      if (const auto stamp = stampHandle.get(*index); stamp > cloud.header.stamp)
+        cloud.header.stamp = stamp;
     }
   }
+
+  // update metadata (PCL convention has timestamps in milliseconds)
+  cloud.header.stamp *= 1e3;
 
   // return full cloud
   return cloud;
