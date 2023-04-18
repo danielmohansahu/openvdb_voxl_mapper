@@ -7,6 +7,9 @@
 // GTest
 #include <gtest/gtest.h>
 
+// OpenVDB
+#include <openvdb/openvdb.h>
+
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
 
@@ -58,4 +61,10 @@ TEST_F(TestVoxelCloud, testMerge)
 
   // verify full cloud has expected number of points
   EXPECT_EQ(cloud.size(), num_clouds * num_points);
+}
+
+// test subset deletion
+TEST_F(TestVoxelCloud, testDeletion)
+{
+  EXPECT_TRUE(false);
 }
