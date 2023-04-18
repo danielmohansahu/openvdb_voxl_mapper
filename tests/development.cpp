@@ -25,18 +25,23 @@ int main(int argc, char** argv)
   // simple timer
   openvdb::util::CpuTimer timer;
 
-  // construct an empty cloud
-  ovm::VoxelCloud cloud;
-
-  // generate and add random clouds
-  // each iteration _roughly_ correspond to 1 frame of a 128X1024 beam
-  //  LIDAR with 120m max range traveling at ~10m/s, for a total of 10 seconds of data
-  timer.start("Merging clouds into grid");
+  // generate random clouds outside of the merge timing loop
+  timer.start("Generating random clouds");
+  std::vector<ovm::VoxelCloud> random_clouds;
   for (size_t i = 0; i != 100; ++i)
   {
     const std::string filename = "raw_" + std::to_string(i) + ".vdb";
-    cloud.merge(ovm::test::make_random_cloud(filename, 200000, 1.0 * i, 40.0, 0.5 * i, 40.0, 0.0, 10.0));
+    random_clouds.emplace_back(ovm::test::make_random_cloud(filename, 200000, 1.0 * i, 40.0, 0.5 * i, 40.0, 0.0, 10.0));
   }
+
+  // construct an empty cloud
+  ovm::VoxelCloud cloud;
+
+  // add random clouds. each iteration _roughly_ correspond to 1 frame of a 128X1024 beam
+  //  LIDAR with 120m max range traveling at ~10m/s, for a total of 10 seconds of data
+  timer.restart("Merging clouds into grid");
+  for (auto& subcloud : random_clouds)
+    cloud.merge(subcloud);
 
   // extract ground plane from grid (naive single threaded)
   timer.restart("Extracting ground plane via CPU");
