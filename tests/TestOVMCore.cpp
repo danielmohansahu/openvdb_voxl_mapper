@@ -4,11 +4,16 @@
  * common operations on an underlying OpenVDB grid.
  */
 
+// STL
+#include <unordered_map>
+#include <limits>
+
 // GTest
 #include <gtest/gtest.h>
 
 // OpenVDB
 #include <openvdb/openvdb.h>
+#include <openvdb/points/PointCount.h>
 
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
@@ -68,19 +73,73 @@ TEST_F(TestVoxelCloud, testMerge)
 // test subset deletion
 TEST_F(TestVoxelCloud, testDeletion)
 {
-  // first thing to do : make a map of {stamp : num_points}
-
-  // construct a cloud and merge in several different timestamps
+  // construct empty cloud
+  ovm::VoxelCloud cloud;
+  ASSERT_EQ(cloud.size(), 0);
   
-  
-  // delete a single timestamp
+  // generate random clouds with varying timestamps
+  std::unordered_map<float,size_t> num_points;
+  for (size_t i = 0; i != 10; ++i)
+  {
+    // make a random cloud
+    auto pclcloud = ovm::test::make_random_pcl_cloud();
+    pclcloud.header.stamp = i * 1e3;   // cast to milliseconds per PCL convention
 
-  // verify that timestamp is no longer present
+    // convert to voxelcloud
+    ovm::VoxelCloud subcloud(pclcloud);
+    const size_t N = openvdb::points::pointCount(subcloud.grid()->tree());
+    ASSERT_EQ(N, pclcloud.size());
 
+    // save this stamp's metadata
+    num_points.insert({i, N});
+
+    // merge into the main grid
+    cloud.merge(subcloud);
+  }
+
+  // get starting total of points
+  const size_t total_points = openvdb::points::pointCount(cloud.grid()->tree());
+
+  // sanity check total points (really a merge test)
+  {
+    size_t total_points_check {0};
+    for (auto& kv : num_points)
+      total_points_check += kv.second;
+    ASSERT_EQ(total_points, total_points_check);
+  }
+
+  // verify that all expected timestamps are in the correct range
+  {
+    const auto [min,max] = cloud.time_bounds();
+    EXPECT_EQ(min, 0);
+    EXPECT_EQ(max, 10);
+    for (auto kv : num_points)
+      EXPECT_TRUE(kv.second >= min && kv.second <= max);
+  }
+
+  // attempt to delete a single timestamp
+  cloud.remove(1);
+
+  // verify that point totals make sense
+  {
+    const size_t N = openvdb::points::pointCount(cloud.grid()->tree());   
+    EXPECT_EQ(N, total_points - num_points.at(1));
+  }
 
   // delete all timestamps before a fixed time
+  cloud.remove_before(5.5);
 
-  // verify remaining timestamps all exist 
+  // verify remaining timestamps are all strictly after the threshold
+  {
+    const auto [min,max] = cloud.time_bounds();
+    EXPECT_EQ(min, 6);
+    EXPECT_EQ(max, 10);
 
-  EXPECT_TRUE(false);
+    const size_t N = openvdb::points::pointCount(cloud.grid()->tree());   
+    EXPECT_EQ(N, num_points.at(6) + num_points.at(7) + num_points.at(8) + num_points.at(9) + num_points.at(10));
+  }
+
+  // remove all points
+  cloud.remove_before(std::numeric_limits<float>::max());
+  EXPECT_TRUE(cloud.empty());
 }
