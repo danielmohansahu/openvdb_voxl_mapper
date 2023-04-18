@@ -22,7 +22,7 @@ namespace ovm::ops
 
 // kernel to iterate through a single column of voxels and return the lowest point height
 __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
-                             ovm::Map::MapT* map,
+                             float* deviceMap,
                              const int xmin, const int xmax,
                              const int ymin, const int ymax,
                              const int zmin, const int zmax)
@@ -32,7 +32,7 @@ __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
   const int j = blockIdx.y * blockDim.y + threadIdx.y;
 
   // ignore out of bounds threads
-  if (i >= xmax - xmin || j >= ymax - ymin)
+  if (i > xmax - xmin || j > ymax - ymin)
     return;
 
   // construct coordinate accessor for openvdb voxel in index space ([0,inf) -> (-inf, inf))
@@ -81,23 +81,20 @@ __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
 
   // update array element representing the minimum Z value in a column
   if (!std::isnan(min_z))
-    map->coeffRef(j,i) = min_z;   // access is (row, col)
+    deviceMap[j + i * (xmax - xmin + 1)] = min_z;
 }
 
 extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,
                                            const openvdb::CoordBBox& bbox,
-                                           ovm::Map::MapT& map,
+                                           float* deviceMap,
                                            cudaStream_t stream)
 {
-  // sanity check inputs
-  assert(map.rows() == bbox.dim().y() && map.cols() == bbox.dim().x());
-
   // get a (raw) pointer to a NanoVDB grid of value type float on the GPU (uint32_t for PointDataGrid)
-  auto* grid = gridHandle.deviceGrid<uint32_t>();
+  auto* deviceGrid = gridHandle.deviceGrid<uint32_t>();
 
   // sanity check
-  if (!grid)
-    throw std::runtime_error("Failed to load grid to the GPU.");
+  if (!deviceGrid || !deviceMap)
+    throw std::runtime_error("Failed to load grid and / or mat to the GPU.");
 
   // set up GPU block / thread configuration
   auto round = [](int a, int b) { return (a + b - 1) / b; };
@@ -106,7 +103,7 @@ extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::Cu
 
   // kernel syntax:  <<<blocks per grid, threads per block, dynamic shared memory per block, stream >>>
   min_z_kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
-    *grid, &map,
+    *deviceGrid, deviceMap,
     bbox.min().x(), bbox.max().x(),
     bbox.min().y(), bbox.max().y(),
     bbox.min().z(), bbox.max().z()

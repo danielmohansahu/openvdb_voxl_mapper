@@ -63,7 +63,7 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
 
 extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,
                                            const openvdb::CoordBBox& bbox,
-                                           ovm::Map::MapT& map,
+                                           float* deviceMap,
                                            cudaStream_t stream);
 
 std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
@@ -79,19 +79,34 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
   // convert grid from OpenVDB to NanoVDB grid
   auto gridHandle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(*grid);
 
+  // construct a buffer to support host <-> GPU conversion
+  nanovdb::CudaDeviceBuffer mapBuffer;
+  mapBuffer.init(result.map.rows() * result.map.cols() * sizeof(float));
+
   // Create a CUDA stream to allow for asynchronous copy of pinned CUDA memory.
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  // Copy the NanoVDB grid to the GPU asynchronously
+  // Copy the NanoVDB grid and matrix to the GPU asynchronously
   gridHandle.deviceUpload(stream, false);
+  mapBuffer.deviceUpload();
 
   // execute core method on the GPU
-  launch_ground_plane_kernel(gridHandle, bbox, result.map, stream);
+  float* device_map = reinterpret_cast<float*>(mapBuffer.deviceData());
+  launch_ground_plane_kernel(gridHandle, bbox, device_map, stream);
+
+  // copy modified map back to host
+  mapBuffer.deviceDownload();
+
+  // convert from matHandle to eigen result
+  float* host_map = reinterpret_cast<float*>(mapBuffer.data());
+  for (auto i = 0; i != result.map.cols(); ++i)
+    for (auto j = 0; j != result.map.rows(); ++j)
+      result.map.coeffRef(j,i) = host_map[j + i * result.map.rows()];
 
   // Destroy the CUDA stream
   cudaStreamDestroy(stream);
-  
+
   // return updated map
   return result;
 }
