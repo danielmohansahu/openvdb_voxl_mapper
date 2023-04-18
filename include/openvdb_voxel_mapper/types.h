@@ -20,8 +20,8 @@ struct Options
 {
   float voxel_size {0.5};               // voxel size, in meters
   float default_confidence {1.0};       // confidence, if unsupplied
-  size_t default_label {0};             // label, if unsupplied
-  size_t free_label {0};                // label for free space, e.g. ray trace cleared
+  int default_label {-1};               // label, if unsupplied
+  int free_label {0};                   // label for free space, e.g. ray trace cleared
   std::vector<size_t> ground_labels {}; // labels considered 'ground' for operations
 }; // struct Options
 

@@ -53,6 +53,9 @@ class VoxelCloud
   // accessor for core grid - API for operations
   GridT::Ptr grid() { return _grid; }
 
+  // const accessor for core grid - API for operations
+  const GridT::Ptr grid() const { return _grid; }
+
   // setter for core grid - API for operations
   void swap(GridT::Ptr& other) { _grid.swap(other); }
 

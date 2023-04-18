@@ -6,6 +6,7 @@
 
 // STL
 #include <concepts>
+#include <optional>
 
 // PCL
 #include <pcl/point_types.h>
@@ -35,7 +36,7 @@ concept bool HasConfidence = requires(PointT pt) { {pt.confidence} -> bool; };
 // construct an OpenVDB PointDataGrid from a PCL PointCloud
 template <typename PointT>
 requires HasXYZ<PointT>
-openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& cloud, const Options& opts)
+openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& cloud, const Options& opts = Options())
 {
   // @TODO consider making a wrapper around a PCL cloud directly to avoid copying
   //    into a std::vector; need to ensure this works as well with attributes!
@@ -49,7 +50,7 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   std::vector<openvdb::Vec3f> positions; positions.reserve(cloud.size());
 
   // enable auxiliary attribute vectors
-  std::vector<size_t> labels; labels.reserve(cloud.size());
+  std::vector<int> labels; labels.reserve(cloud.size());
   std::vector<float> confidences; confidences.reserve(cloud.size());
 
   // convert from PCL object to a series of vectors (XYZ, Attributes)
@@ -77,9 +78,9 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   auto grid = createPointDataGrid<NullCodec, PointDataGrid>(*pointIndexGrid, positionsWrapper, *transform);
 
   // Append "label" attribute to the grid to hold the label.
-  appendAttribute(grid->tree(), "label", TypedAttributeArray<size_t>::attributeType());
-  PointAttributeVector<size_t> labelsWrapper(labels);
-  populateAttribute<PointDataTree,PointIndexTree,PointAttributeVector<size_t>>(grid->tree(), pointIndexGrid->tree(), "label", labelsWrapper);
+  appendAttribute(grid->tree(), "label", TypedAttributeArray<int>::attributeType());
+  PointAttributeVector<int> labelsWrapper(labels);
+  populateAttribute<PointDataTree,PointIndexTree,PointAttributeVector<int>>(grid->tree(), pointIndexGrid->tree(), "label", labelsWrapper);
 
   // Append "confidence" attribute to the grid to hold the confidence.
   appendAttribute(grid->tree(), "confidence", TypedAttributeArray<float>::attributeType());
@@ -88,6 +89,55 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
 
   // return constructed grid
   return grid;
+}
+
+// convert an openvdb point grid to a PCL PointCloud
+template <typename PointT = pcl::PointXYZ>
+requires HasXYZ<PointT>
+std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGrid::Ptr& grid)
+{
+  using namespace openvdb::points;
+
+  // handle edge case inputs
+  if (!grid || grid->empty())
+    return std::nullopt;
+
+  // initialize output cloud
+  pcl::PointCloud<PointT> cloud;
+  cloud.reserve(pointCount(grid->tree()));
+
+  // iterate through all points in the cloud
+  for (auto leaf = grid->tree().cbeginLeaf(); leaf; ++leaf)
+  {
+    // Extract the position attribute from the leaf by name (P is position).
+    AttributeHandle<openvdb::Vec3f> positionHandle(leaf->constAttributeArray("P"));
+
+    // Extract the attribute handles as well (may be unused)
+    [[maybe_unused]] AttributeHandle<int> labelHandle(leaf->constAttributeArray("label"));
+    [[maybe_unused]] AttributeHandle<float> confidenceHandle(leaf->constAttributeArray("confidence"));
+
+    // Iterate over the point indices in the leaf.
+    for (auto index = leaf->beginIndexOn(); index; ++index)
+    {
+      // get position and convert to world space
+      auto xyz = grid->transform().indexToWorld(positionHandle.get(*index) + index.getCoord().asVec3d());
+
+      // create openvdb point
+      PointT point(xyz.x(), xyz.y(), xyz.z());
+
+      // append additional attributes, if supported
+      if constexpr (HasLabel<PointT>)
+        point.label = labelHandle.get(*index);
+      if constexpr (HasConfidence<PointT>)
+        point.confidence = confidenceHandle.get(*index);
+
+      // add point to cloud
+      cloud.push_back(std::move(point));
+    }
+  }
+
+  // return full cloud
+  return cloud;
 }
 
 } // namespace ovm::conversions
