@@ -48,7 +48,7 @@ class VoxelCloud
   void write(const std::string& filename) const;
 
   // merge in another point data grid, consuming it in the process
-  void merge(VoxelCloud&& other);
+  void merge(VoxelCloud& other);
 
   // accessor for core grid - API for operations
   GridT::Ptr grid() { return _grid; }

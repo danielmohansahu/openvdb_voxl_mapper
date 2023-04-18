@@ -46,7 +46,7 @@ void VoxelCloud::write(const std::string& filename) const
   }
 }
 
-void VoxelCloud::merge(VoxelCloud&& other)
+void VoxelCloud::merge(VoxelCloud& other)
 {
   // handle edge cases
   if (other.empty())
