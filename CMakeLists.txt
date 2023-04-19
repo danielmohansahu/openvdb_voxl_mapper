@@ -75,7 +75,7 @@ endif (OVM_BUILD_ROS1)
 #                              OVM LIBRARY                                    #
 ###############################################################################
 
-set (SOURCE_FILES
+set (OVM_SOURCE_FILES
   src/openvdb_voxel_mapper.cpp
   src/voxel_cloud.cpp
   src/operations/ground_plane_extraction.cpp
@@ -83,7 +83,7 @@ set (SOURCE_FILES
 )
 
 # build core library
-add_library (${PROJECT_NAME} ${SOURCE_FILES})
+add_library (${PROJECT_NAME} ${OVM_SOURCE_FILES})
 target_include_directories (
   ${PROJECT_NAME}
   PUBLIC
