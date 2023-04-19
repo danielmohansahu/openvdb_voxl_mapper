@@ -5,12 +5,15 @@
 
 // STL
 #include <assert.h>
+#include <limits>
 
 // OpenVDB
 #include <openvdb/points/PointCount.h>
+#include <openvdb/points/PointStatistics.h>
 
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
+#include <openvdb_voxel_mapper/operations/openvdb_operations.h>
 
 namespace ovm
 {
@@ -74,7 +77,11 @@ void VoxelCloud::remove(const float stamp)
   if (this->empty())
     return;
 
-  // I am a stub
+  // construct evaluation criteria (TRUE == keep the associated point)
+  auto valid = [stamp] (const float& val) -> bool { return val != stamp; };
+
+  // filter grid
+  ops::drop_by_attribute_criterion<float>(_grid->tree(), "stamp", valid);
 }
 
 void VoxelCloud::remove_before(const float stamp)
@@ -83,7 +90,11 @@ void VoxelCloud::remove_before(const float stamp)
   if (this->empty())
     return;
 
-  // I am a stub
+  // construct evaluation criteria (TRUE == keep the associated point)
+  auto valid = [stamp] (const float& val) -> bool { return val > stamp; };
+
+  // filter grid
+  ops::drop_by_attribute_criterion<float>(_grid->tree(), "stamp", valid);
 }
 
 std::pair<float,float> VoxelCloud::time_bounds() const
@@ -92,8 +103,16 @@ std::pair<float,float> VoxelCloud::time_bounds() const
   if (this->empty())
     return {0,0};
 
-  // I am a stub
-  return {0,0};
+  // initialize results
+  float lower {std::numeric_limits<float>::max()};
+  float upper {std::numeric_limits<float>::min()};
+
+  // get min / max values
+  if (openvdb::points::evalMinMax(_grid->tree(), "stamp", lower, upper))
+    return {lower, upper};
+
+  // failed to process for some reason
+  throw std::runtime_error("Failed to extract time bounds. Unexpected error.");
 }
 
 } // namespace ovm
