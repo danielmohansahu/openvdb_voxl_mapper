@@ -1,6 +1,15 @@
 # OpenVDB Voxel Mapping library
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.24)
 project (openvdb_voxel_mapping LANGUAGES CXX CUDA)
+
+###############################################################################
+#                                  OPTIONS                                    #
+###############################################################################
+
+include(CMakeDependentOption)
+option (OVM_BUILD_ROS1 "Enable ROS1 bindings." OFF)
+option (OVM_BUILD_TESTS "Build and run unit tests." OFF)
+option (OVM_BUILD_BENCHMARK "Build benchmark executables." OFF)
 
 ###############################################################################
 #                 DEPENDENCIES & GLOBAL CONFIGURATION                         #
@@ -8,9 +17,9 @@ project (openvdb_voxel_mapping LANGUAGES CXX CUDA)
 
 # locate required dependencies
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-find_package (OpenVDB REQUIRED COMPONENTS openvdb nanovdb)
-find_package (Eigen3 REQUIRED NO_MODULE)
-find_package (PCL REQUIRED COMPONENTS common)
+find_package (OpenVDB 10.0.1 REQUIRED COMPONENTS openvdb nanovdb)
+find_package (Eigen3 3.3.7 REQUIRED NO_MODULE)
+find_package (PCL 1.10.0 REQUIRED COMPONENTS common)
 find_package (CUDAToolkit REQUIRED)
 
 # required top level options
@@ -20,10 +29,37 @@ set (CMAKE_CUDA_STANDARD 17)
 set (CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 
 # default architecture target
-# @TODO generalize, or upgrade CMAKE to use (all, all-major, native)
 if (NOT CMAKE_CUDA_ARCHITECTURES)
-  set (CMAKE_CUDA_ARCHITECTURES 75)
+  set (CMAKE_CUDA_ARCHITECTURES native)
 endif ()
+
+###############################################################################
+#                         ROS1 Configuration                                  #
+###############################################################################
+
+if (OVM_BUILD_ROS1)
+  # specify ROS package dependencies
+  set (ROS1_PACKAGE_BUILD_DEPS
+    grid_map_core
+    grid_map_msgs
+    pcl_conversions
+    sensor_msgs
+  )
+  set (ROS1_PACKAGE_DEPS
+    ${ROS1_PACKAGE_BUILD_DEPS}
+  )
+  
+  # find catkin and required dependencies
+  find_package (catkin REQUIRED COMPONENTS ${ROS1_PACKAGE_BUILD_DEPS})
+
+  # configure ROS1 package metadata
+  catkin_package (
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS ${ROS1_PACKAGE_DEPS}
+    DEPENDS EIGEN PCL OpenVDB
+  )
+endif (OVM_BUILD_ROS1)
 
 ###############################################################################
 #                                 DEBUG                                       #
@@ -36,7 +72,7 @@ endif ()
 # endforeach()
 
 ###############################################################################
-#                                LIBRARY                                      #
+#                              OVM LIBRARY                                    #
 ###############################################################################
 
 set (SOURCE_FILES
@@ -77,4 +113,30 @@ target_compile_options (
 #                                 TESTS                                       #
 ###############################################################################
 
-add_subdirectory(tests)
+if (OVM_BUILD_TESTS)
+  add_subdirectory(tests)
+endif (OVM_BUILD_TESTS)
+
+###############################################################################
+#                               BENCHMARK                                     #
+###############################################################################
+
+if (OVM_BUILD_BENCHMARK)
+  add_subdirectory(benchmark)
+endif (OVM_BUILD_BENCHMARK)
+
+###############################################################################
+#                                INSTALL                                      #
+###############################################################################
+
+# install core library
+install (TARGETS ${PROJECT_NAME}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+# install headers
+install (DIRECTORY include
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)

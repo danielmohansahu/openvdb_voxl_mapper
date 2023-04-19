@@ -79,6 +79,14 @@ RUN mkdir openvdb/build \
              .. \
     && make install -j7
 
+# install additional OVM specific dependencies (e.g. ROS packages)
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      ros-noetic-grid-map-core \
+      ros-noetic-grid-map-msgs \
+      ros-noetic-pcl-conversions \
+    && rm -rf /var/lib/apt/lists/*
+
 # drop into expected workspace
 WORKDIR /workspace
 CMD bash

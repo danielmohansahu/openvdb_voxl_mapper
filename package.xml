@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- ROS1 package.xml specification. -->
+<package format="3">
+  <name>openvdb_voxel_mapping</name>
+  <version>1.0.0</version>
+  <description>VOXEL Mapping with an OpenVDB Backend.</description>
+  <maintainer email="dsahu@fake.mail.com">Daniel M. Sahu</maintainer>
+  <license>MIT</license>
+
+  <!-- dependencies -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>grid_map_core</depend>
+  <depend>grid_map_msgs</depend>
+  <depend>pcl_conversions</depend>
+  <depend>sensor_msgs</depend>
+
+</package>
