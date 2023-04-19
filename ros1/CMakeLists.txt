@@ -8,7 +8,10 @@ set (ROS1_PACKAGE_BUILD_DEPS
   grid_map_msgs
   grid_map_ros
   pcl_conversions
+  pcl_ros
+  rosbag
   sensor_msgs
+  tf2_ros
 )
 set (ROS1_PACKAGE_DEPS
   ${ROS1_PACKAGE_BUILD_DEPS}
@@ -40,6 +43,12 @@ add_library (ros1_voxel_cloud ros1_voxel_cloud.cpp)
 target_include_directories (ros1_voxel_cloud PUBLIC ${OVM_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 target_link_libraries (ros1_voxel_cloud PUBLIC ${OVM_ROS1_LIBRARY_DEPS})
 target_compile_options (ros1_voxel_cloud PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:-Werror;-Wall;-fconcepts>")
+
+# example / utility executable to support aggregating clouds in a bag file
+add_executable (aggregate_bag aggregate_bag.cpp)
+target_include_directories (aggregate_bag PRIVATE ${OVM_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+target_link_libraries (aggregate_bag ${OVM_ROS1_LIBRARY_DEPS})
+target_compile_options (aggregate_bag PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Werror;-Wall;-fconcepts>")
 
 ###############################################################################
 #                                INSTALL                                      #
