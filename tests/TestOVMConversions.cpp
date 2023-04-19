@@ -16,7 +16,7 @@
 
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
-#include <openvdb_voxel_mapper/conversions.h>
+#include <openvdb_voxel_mapper/conversions/pcl.h>
 
 // OVM Test
 #include "test_utilities.h"

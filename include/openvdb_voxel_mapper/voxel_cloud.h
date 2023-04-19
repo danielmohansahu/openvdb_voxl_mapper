@@ -16,7 +16,7 @@
 
 // OVM
 #include "types.h"
-#include "conversions.h"
+#include "conversions/pcl.h"
 
 namespace ovm
 {
@@ -25,7 +25,7 @@ class VoxelCloud
 {
  public:
   // convenience typedefs
-  using GridT   = openvdb::points::PointDataGrid;
+  using GridT = openvdb::points::PointDataGrid;
 
  public:
   // no empty constructor allowed

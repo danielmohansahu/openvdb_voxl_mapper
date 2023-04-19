@@ -1,4 +1,4 @@
-/* Conversions to and from OpenVDB types.
+/* Conversions to and from OpenVDB types for PCL.
  *
  */
 
@@ -18,7 +18,7 @@
 #include <openvdb/points/PointConversion.h>
 
 // OVM
-#include "types.h"
+#include "../types.h"
 
 namespace ovm::conversions
 {
