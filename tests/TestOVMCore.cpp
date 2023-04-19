@@ -79,18 +79,18 @@ TEST_F(TestVoxelCloud, testDeletion)
   
   // generate random clouds with varying timestamps
   std::unordered_map<float,size_t> num_points;
-  for (size_t i = 0; i != 10; ++i)
+  for (size_t i = 0; i != 11; ++i)
   {
     // make a random cloud
     auto pclcloud = ovm::test::make_random_pcl_cloud();
-    pclcloud.header.stamp = i * 1e3;   // cast to milliseconds per PCL convention
+    pclcloud.header.stamp = i * 1e6;   // cast to microseconds per PCL convention
 
     // convert to voxelcloud
     ovm::VoxelCloud subcloud(pclcloud);
     const size_t N = openvdb::points::pointCount(subcloud.grid()->tree());
     ASSERT_EQ(N, pclcloud.size());
 
-    // save this stamp's metadata
+    // save this stamp's metadata (stamp (sec), number of points)
     num_points.insert({i, N});
 
     // merge into the main grid
@@ -114,7 +114,10 @@ TEST_F(TestVoxelCloud, testDeletion)
     EXPECT_EQ(min, 0);
     EXPECT_EQ(max, 10);
     for (auto kv : num_points)
-      EXPECT_TRUE(kv.second >= min && kv.second <= max);
+    {
+      EXPECT_GE(kv.first, min);
+      EXPECT_LE(kv.first, max);
+    }
   }
 
   // attempt to delete a single timestamp
@@ -127,16 +130,16 @@ TEST_F(TestVoxelCloud, testDeletion)
   }
 
   // delete all timestamps before a fixed time
-  cloud.remove_before(5.5);
+  cloud.remove_before(6.5);
 
   // verify remaining timestamps are all strictly after the threshold
   {
     const auto [min,max] = cloud.time_bounds();
-    EXPECT_EQ(min, 6);
+    EXPECT_EQ(min, 7);
     EXPECT_EQ(max, 10);
 
     const size_t N = openvdb::points::pointCount(cloud.grid()->tree());   
-    EXPECT_EQ(N, num_points.at(6) + num_points.at(7) + num_points.at(8) + num_points.at(9) + num_points.at(10));
+    EXPECT_EQ(N, num_points.at(7) + num_points.at(8) + num_points.at(9) + num_points.at(10));
   }
 
   // remove all points
