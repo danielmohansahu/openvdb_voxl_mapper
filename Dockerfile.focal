@@ -30,6 +30,7 @@ RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
       ros-noetic-ros-base \
+      python3-pip \
       cmake \
       libblosc-dev \
       libjemalloc-dev \
@@ -39,6 +40,10 @@ RUN apt-get update \
       libpcl-dev \
       g++-10 \
     && rm -rf /var/lib/apt/lists/*
+
+# install python packages
+RUN python3 -m pip install --upgrade pip \
+    && python3 -m pip install rosdep2
 
 # switch to GCC 10 by default
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
@@ -80,11 +85,8 @@ RUN mkdir openvdb/build \
     && make install -j7
 
 # install additional OVM specific dependencies (e.g. ROS packages)
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      ros-noetic-grid-map-core \
-      ros-noetic-grid-map-msgs \
-      ros-noetic-pcl-conversions \
+RUN rosdep update \
+    && rosdep install --from-paths ros1 -yi --rosdistro=noetic \
     && rm -rf /var/lib/apt/lists/*
 
 # drop into expected workspace
