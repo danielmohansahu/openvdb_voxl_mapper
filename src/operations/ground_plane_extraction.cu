@@ -80,8 +80,7 @@ __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
   }
 
   // update array element representing the minimum Z value in a column
-  if (!std::isnan(min_z))
-    deviceMap[j + i * (xmax - xmin + 1)] = min_z;
+  deviceMap[j + i * (xmax - xmin + 1)] = min_z;
 }
 
 extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,
