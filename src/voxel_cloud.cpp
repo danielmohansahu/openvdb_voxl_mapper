@@ -49,26 +49,18 @@ void VoxelCloud::write(const std::string& filename) const
   }
 }
 
-void VoxelCloud::merge(VoxelCloud& other)
+void VoxelCloud::merge(const VoxelCloud& other)
 {
   // handle edge cases
   if (other.empty())
-  {
     // not super useful, but thanks? I guess?
     return;
-  }
-  if (this->empty())
-  {
+  else if (this->empty())
     // we're empty; just use the other directly
-    *this = std::move(other);
-    return;
-  }
-
-  // both VoxelClouds have contents - merge 'other' into ourselves
-  openvdb::points::mergePoints(*_grid, *(other.grid()));
-  
-  // reset other to make sure nobody uses it
-  other.reset();  
+    _grid = other.grid()->deepCopy();
+  else
+    // both VoxelClouds have contents - merge 'other' into ourselves
+    openvdb::points::mergePoints(*_grid, *(other.grid()));
 }
 
 void VoxelCloud::remove(const float stamp)

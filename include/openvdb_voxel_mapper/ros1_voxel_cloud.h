@@ -29,7 +29,7 @@ class ROS1VoxelCloud
 
   // merge an incoming sensor_msgs::PointCloud2 cloud
   template <typename PointT = pcl::PointXYZ>
-  void merge(const sensor_msgs::PointCloud2& msg) { _cloud.merge(conversions::from_ros<PointT>(msg)); }
+  void merge(const sensor_msgs::PointCloud2& msg) { _cloud.merge(conversions::from_ros<PointT>(msg, _opts)); }
   
   // convert current full cloud to a sensor_msgs::PointCloud2
   std::optional<sensor_msgs::PointCloud2> cloud() const { return conversions::to_ros(_cloud); }

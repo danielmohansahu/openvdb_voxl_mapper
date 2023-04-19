@@ -48,7 +48,7 @@ class VoxelCloud
   void write(const std::string& filename) const;
 
   // merge in another point data grid, consuming it in the process
-  void merge(VoxelCloud& other);
+  void merge(const VoxelCloud& other);
 
   // remove a single timestamp from the cloud
   void remove(const float stamp);
