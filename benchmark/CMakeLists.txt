@@ -16,6 +16,6 @@ set(OVM_BENCHMARK_DEPENDENCIES
 #                               BENCHMARK                                     #
 ###############################################################################
 
-# development testing executable - subject to change, not a real test.
+# nuscenes benchmark
 add_executable (nuscenes_benchmark nuscenes_benchmark.cpp)
 target_link_libraries (nuscenes_benchmark ${OVM_BENCHMARK_DEPENDENCIES})

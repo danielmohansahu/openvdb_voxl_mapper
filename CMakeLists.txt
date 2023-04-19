@@ -8,8 +8,8 @@ project (openvdb_voxel_mapping LANGUAGES CXX CUDA)
 
 include(CMakeDependentOption)
 option (OVM_BUILD_ROS1 "Enable ROS1 bindings." OFF)
-option (OVM_BUILD_TESTS "Build and run unit tests." OFF)
-option (OVM_BUILD_BENCHMARK "Build benchmark executables." OFF)
+option (OVM_BUILD_TESTS "Build and run unit tests." ON)
+option (OVM_BUILD_BENCHMARK "Build benchmark executables." ON)
 
 ###############################################################################
 #                 DEPENDENCIES & GLOBAL CONFIGURATION                         #
