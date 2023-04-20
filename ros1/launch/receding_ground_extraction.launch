@@ -14,20 +14,13 @@ ground plane extraction / publication.
   <arg name="horizon" default="10.0" doc="Time horizon to limit aggregation." />
   <arg name="voxel_size" default="0.5" doc="Voxel size - this implicitly maps to output map cell size." />
 
-  <!-- visualization args -->
-  <arg name="visualize" default="true" doc="Bring up RVIZ visualization." />
-  <arg name="rviz_config" default="$(dirname)/receding_ground_extraction.rviz" doc="RViz configuration file." />
-
   <!-- launch core node -->
-  <node name="receding_ground_extraction" pkg="openvdb_voxel_mapper" type="receding_ground_extraction_node" output="screen" required="true">
+  <node name="receding_ground_extraction" pkg="openvdb_voxel_mapping" type="receding_ground_extraction_node" output="screen" required="true">
     <param name="cloud_topic" value="$(arg cloud_topic)" />
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="map_topic" value="$(arg map_topic)" />
     <param name="horizon" value="$(arg horizon)" />
     <param name="voxel_size" value="$(arg voxel_size)" />
   </node>
-
-  <!-- also bring up an RVIZ configuration for viewing -->
-  <node if="$(arg visualize)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" />
 
 </launch>

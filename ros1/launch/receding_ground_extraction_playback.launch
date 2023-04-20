@@ -1,0 +1,36 @@
+<!-- Aggregated PC Ground Plane Extraction Node Playback
+
+Wrapper around a ground plane extractor from bag playback.
+-->
+<launch>
+  <!-- required args -->
+  <arg name="bag" doc="Bag file to playback." />
+  <arg name="cloud_topic" doc="Input cloud topic to process." />
+  <arg name="fixed_frame" doc="Fixed frame in which to assemble clouds." />
+
+  <!-- optional args -->
+  <arg name="map_topic" default="map" doc="Map topic to publish out." />
+  <arg name="horizon" default="10.0" doc="Time horizon to limit aggregation." />
+  <arg name="voxel_size" default="0.5" doc="Voxel size - this implicitly maps to output map cell size." />
+
+  <!-- visualization args -->
+  <arg name="visualize" default="true" doc="Bring up RVIZ visualization." />
+  <arg name="rviz_config" default="$(dirname)/receding_ground_extraction.rviz" doc="RViz configuration file." />
+
+  <!-- bag playback -->
+  <param name="use_sim_time" value="true" />
+  <node name="playback" pkg="rosbag" type="play" args="--clock $(arg bag)" output="screen" />
+  
+  <!-- core launch file -->
+  <include file="$(find openvdb_voxel_mapping)/ros1/launch/receding_ground_extraction.launch" >
+    <arg name="cloud_topic" value="$(arg cloud_topic)" />
+    <arg name="fixed_frame" value="$(arg fixed_frame)" />
+    <arg name="map_topic" value="$(arg map_topic)" />
+    <arg name="horizon" value="$(arg horizon)" />
+    <arg name="voxel_size" value="$(arg voxel_size)" />
+  </include>
+
+  <!-- also bring up an RVIZ configuration for viewing -->
+  <node if="$(arg visualize)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" />
+
+</launch>
