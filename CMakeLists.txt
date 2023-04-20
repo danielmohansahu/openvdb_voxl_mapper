@@ -117,6 +117,6 @@ install (TARGETS ${PROJECT_NAME}
 )
 
 # install headers
-install (DIRECTORY include
+install (DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
