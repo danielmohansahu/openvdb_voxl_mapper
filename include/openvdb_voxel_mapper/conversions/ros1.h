@@ -34,13 +34,14 @@ VoxelCloud from_ros(const sensor_msgs::PointCloud2& msg, const Options& opts)
 }
 
 // convert a VoxelCloud into a ROS PointCloud2
-std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud)
+std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud, const std::string& frame)
 {
   // convert to PCL and then to a PointCloud2
   if (auto pcl_cloud = to_pcl(cloud.grid()); pcl_cloud)
   {
     sensor_msgs::PointCloud2 msg;
     pcl::toROSMsg(*pcl_cloud, msg);
+    msg.header.frame_id = frame;
     return msg;
   }
 
