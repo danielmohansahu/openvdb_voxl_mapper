@@ -9,6 +9,7 @@
 
 // STL
 #include <optional>
+#include <memory>
 
 // ROS
 #include <ros/ros.h>
@@ -41,23 +42,25 @@ int main(int argc, char ** argv)
   // configuration - optional params
   ovm::Options opts;
   const std::string map_topic = pnh.param("map_topic", std::string("map"));
+  const std::string full_cloud_topic = pnh.param("full_cloud_topic", std::string("full_cloud"));
   const double horizon = pnh.param("horizon", 10.0);
   opts.voxel_size = pnh.param("voxel_size", 0.5);
 
   // initialize tf listener / buffer
-  std::shared_ptr<tf2_ros::Buffer> tfb;
-  tf2_ros::TransformListener tfl {*tfb};
-
+  auto tfb = std::make_shared<tf2_ros::Buffer>();
+  tf2_ros::TransformListener tfl(*tfb);
+  
   // initialize mapper
   ovm::ros::ROS1VoxelCloud mapper {opts};
   
-  // set up ros publisher
-  ros::Publisher pub = nh.advertise<grid_map_msgs::GridMap>(map_topic, 1);
+  // set up ros publishers
+  ros::Publisher map_pub = nh.advertise<grid_map_msgs::GridMap>(map_topic, 1);
+  ros::Publisher full_cloud_pub = nh.advertise<sensor_msgs::PointCloud2>(full_cloud_topic, 1);
 
   // set up subscriber and callback
   ros::Subscriber sub = nh.subscribe<sensor_msgs::PointCloud2>(
     cloud_topic, 1,
-    [&, tfb, pub, mapper, horizon, fixed_frame] (const auto& msg) mutable -> void
+    [&, tfb, map_pub, full_cloud_pub, mapper, horizon, fixed_frame] (const auto& msg) mutable -> void
     {
       // core ROS callback
       ROS_DEBUG("Processing incoming PointCloud...");
@@ -74,13 +77,18 @@ int main(int argc, char ** argv)
         // merge in latest cloud
         ROS_DEBUG("Merging transformed cloud...");
         mapper.merge(cloud);
+
+        // also publish full cloud, if anyone is listeneing
+        if (full_cloud_pub.getNumSubscribers() != 0)
+          if (auto msg = mapper.cloud(fixed_frame); msg)
+            full_cloud_pub.publish(*msg);
       }
 
       // extract ground plane
       // note: we still do this even if we didn't merge incoming data
       ROS_DEBUG("Extracting ground plane...");
       if (auto map = mapper.ground_plane(); map)
-        pub.publish(*map);
+        map_pub.publish(*map);
       else
         ROS_ERROR("Failed to extract ground plane.");
 
@@ -89,5 +97,7 @@ int main(int argc, char ** argv)
   );
 
   // spin until shutdown
+  ROS_INFO_STREAM("Converting PointClouds on '" << cloud_topic << "' to GridMaps on '"
+                  << map_topic << "' with a " << horizon << " second time horizon."); 
   ros::spin();
 }
