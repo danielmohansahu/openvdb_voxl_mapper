@@ -7,7 +7,7 @@
   <maintainer email="dsahu@fake.mail.com">Daniel M. Sahu</maintainer>
   <license>MIT</license>
 
-  <!-- dependencies -->
+  <!-- build dependencies -->
   <buildtool_depend>catkin</buildtool_depend>
   <depend>grid_map_core</depend>
   <depend>grid_map_msgs</depend>
@@ -17,5 +17,9 @@
   <depend>rosbag</depend>
   <depend>sensor_msgs</depend>
   <depend>tf2_ros</depend>
+
+  <!-- runtime dependencies -->
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>grid_map_rviz_plugin</exec_depend>
 
 </package>

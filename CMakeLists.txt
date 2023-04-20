@@ -20,6 +20,36 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 find_package (OpenVDB 10.0.1 REQUIRED COMPONENTS openvdb nanovdb)
 find_package (Eigen3 3.3.7 REQUIRED NO_MODULE)
 find_package (PCL 1.10.0 REQUIRED COMPONENTS common)
+
+if (OVM_BUILD_ROS1)
+
+  # specify ROS package dependencies
+  set (ROS1_PACKAGE_BUILD_DEPS
+    grid_map_core grid_map_msgs grid_map_ros
+    pcl_conversions pcl_ros
+    rosbag
+    sensor_msgs
+    tf2_ros
+  )
+  set (ROS1_PACKAGE_DEPS
+    ${ROS1_PACKAGE_BUILD_DEPS}
+    rviz
+    grid_map_rviz_plugin
+  )
+
+  # find catkin and required dependencies
+  find_package (catkin REQUIRED COMPONENTS ${ROS1_PACKAGE_BUILD_DEPS})
+
+  # configure ROS1 package metadata
+  catkin_package (
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS ${ROS1_PACKAGE_DEPS}
+    DEPENDS EIGEN PCL OpenVDB
+  )
+endif (OVM_BUILD_ROS1)
+
+# deliberately load CUDAToolkit _after_ ROS; there's some CMake conflicts
 find_package (CUDAToolkit REQUIRED)
 
 # required top level options
@@ -60,6 +90,9 @@ set (OVM_INCLUDE_DIRS
   ${OpenVDB_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+  # cmake hack - this is intended to satisfy an Eigen plugin required by grid_map
+  #              note that we load it at the end of the list for low priorities
+  ${catkin_INCLUDE_DIRS}
 )
 
 # build core library
@@ -86,6 +119,7 @@ target_compile_options (
 ###############################################################################
 
 if (OVM_BUILD_ROS1)
+  # include actual build targets, defined in subdirectory
   add_subdirectory(ros1)
 endif (OVM_BUILD_ROS1)
 
