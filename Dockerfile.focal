@@ -43,7 +43,7 @@ RUN apt-get update \
 
 # install python packages
 RUN python3 -m pip install --upgrade pip \
-    && python3 -m pip install rosdep
+    && python3 -m pip install rosdep catkin-tools
 
 # switch to GCC 10 by default
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
@@ -85,7 +85,7 @@ RUN mkdir openvdb/build \
     && make install -j7
 
 # install additional OVM specific dependencies (e.g. ROS packages)
-COPY ros1/ /tmp/ovm-ros-deps
+COPY package.xml /tmp/ovm-ros-deps/package.xml
 RUN rosdep init && rosdep update && apt update \
     && rosdep install --from-paths /tmp/ovm-ros-deps -yi --rosdistro=noetic \
     && rm -rf /var/lib/apt/lists/*
