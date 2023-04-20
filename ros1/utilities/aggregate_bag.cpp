@@ -8,6 +8,9 @@
  * 
  * Ego pose correction is done via TF2 - this thus requires
  * the bag to have a functional TF tree.
+ * 
+ * @TODO batch inputs to show speedup.
+ * @TODO support .pcd file saving instead of / in addition to .vdb
  */
 
 // STL
