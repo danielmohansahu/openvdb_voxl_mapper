@@ -23,7 +23,7 @@
 #include <pcl_ros/transforms.h>
 
 // OVM
-#include <openvdb_voxel_mapper/ros1_voxel_cloud.h>
+#include "../../include/openvdb_voxel_mapper/ros1_voxel_cloud.h"
 
 int main(int argc, char ** argv)
 {

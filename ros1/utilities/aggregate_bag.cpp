@@ -33,7 +33,7 @@
 #include <pcl_ros/transforms.h>
 
 // OVM
-#include <openvdb_voxel_mapper/ros1_voxel_cloud.h>
+#include "../../include/openvdb_voxel_mapper/ros1_voxel_cloud.h"
 
 // convenience typedefs
 namespace po = boost::program_options;

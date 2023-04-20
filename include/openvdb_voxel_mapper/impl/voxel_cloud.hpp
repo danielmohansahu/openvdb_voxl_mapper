@@ -11,7 +11,7 @@
 #include <openvdb/points/PointConversion.h>
 
 // OVM
-#include <openvdb_voxel_mapper/openvdb/PointMerge.h>
+#include "../openvdb/PointMerge.h"
 
 namespace ovm
 {
