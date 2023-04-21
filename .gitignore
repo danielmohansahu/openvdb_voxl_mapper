@@ -36,3 +36,7 @@ build/
 
 # VSCode Objects
 *.vscode
+
+# Large local files
+*.bag
+*.zip

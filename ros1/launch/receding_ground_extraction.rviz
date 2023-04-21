@@ -54,8 +54,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 7.687492847442627
-        Min Value: -3.7156777381896973
+        Max Value: 10.5277738571167
+        Min Value: -2.702876567840576
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -100,6 +100,93 @@ Visualization Manager:
       Unreliable: false
       Use Rainbow: true
       Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_link:
+          Value: true
+        chassis_link:
+          Value: true
+        diff_link:
+          Value: true
+        front_left_wheel_link:
+          Value: true
+        front_right_wheel_link:
+          Value: true
+        imu_link:
+          Value: true
+        left_diff_unit_link:
+          Value: true
+        nerian_left:
+          Value: true
+        nerian_right:
+          Value: true
+        odom:
+          Value: true
+        os1_frame:
+          Value: true
+        ouster1/os1_imu:
+          Value: true
+        ouster1/os1_lidar:
+          Value: true
+        ouster1/os1_sensor:
+          Value: true
+        pylon_camera:
+          Value: true
+        rear_left_wheel_link:
+          Value: true
+        rear_right_wheel_link:
+          Value: true
+        right_diff_unit_link:
+          Value: true
+        top_chassis_link:
+          Value: true
+        velodyne:
+          Value: true
+      Marker Alpha: 1
+      Marker Scale: 25
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        odom:
+          base_link:
+            chassis_link:
+              diff_link:
+                {}
+              left_diff_unit_link:
+                front_left_wheel_link:
+                  {}
+                rear_left_wheel_link:
+                  {}
+              right_diff_unit_link:
+                front_right_wheel_link:
+                  {}
+                rear_right_wheel_link:
+                  {}
+              top_chassis_link:
+                imu_link:
+                  os1_frame:
+                    ouster1/os1_sensor:
+                      ouster1/os1_imu:
+                        {}
+                      ouster1/os1_lidar:
+                        {}
+                  velodyne:
+                    {}
+            nerian_left:
+              {}
+            nerian_right:
+              {}
+            pylon_camera:
+              {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -137,10 +224,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 5.357010841369629
+      Scale: -2.0183181762695312
       Target Frame: <Fixed Frame>
-      X: -165.9269256591797
-      Y: 56.55481719970703
+      X: -24.962234497070312
+      Y: 35.43211364746094
     Saved: ~
 Window Geometry:
   Displays:
