@@ -19,6 +19,7 @@
 
 // OVM
 #include "../types.h"
+#include "../openvdb/PointMerge.h"
 
 namespace ovm::conversions
 {

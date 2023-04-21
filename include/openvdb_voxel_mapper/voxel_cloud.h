@@ -79,6 +79,3 @@ class VoxelCloud
 }; // class VoxelCloud
 
 } // namespace ovm
-
-// implementation
-#include "impl/voxel_cloud.hpp"
