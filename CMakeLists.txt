@@ -63,6 +63,12 @@ if (NOT CMAKE_CUDA_ARCHITECTURES)
   set (CMAKE_CUDA_ARCHITECTURES native)
 endif ()
 
+# default architecture target
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE RelWithDebInfo)
+  set (CMAKE_CXX_FLAGS_RelWithDebInfo "-ggdb")
+endif ()
+
 ###############################################################################
 #                                 DEBUG                                       #
 ###############################################################################
