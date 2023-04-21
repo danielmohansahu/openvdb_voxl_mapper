@@ -71,8 +71,7 @@ int main(int argc, char ** argv)
       mapper.remove_before(msg->header.stamp.toSec() - horizon);
 
       // try to transform cloud into fixed frame and merge
-      if (sensor_msgs::PointCloud2 cloud;
-          pcl_ros::transformPointCloud(fixed_frame, *msg, cloud, *tfb))
+      if (sensor_msgs::PointCloud2 cloud; pcl_ros::transformPointCloud(fixed_frame, *msg, cloud, *tfb))
       {
         // merge in latest cloud
         ROS_DEBUG("Merging transformed cloud...");
@@ -80,8 +79,8 @@ int main(int argc, char ** argv)
 
         // also publish full cloud, if anyone is listeneing
         if (full_cloud_pub.getNumSubscribers() != 0)
-          if (auto msg = mapper.cloud(fixed_frame); msg)
-            full_cloud_pub.publish(*msg);
+          if (auto full = mapper.cloud(fixed_frame); full)
+            full_cloud_pub.publish(*full);
       }
 
       // extract ground plane

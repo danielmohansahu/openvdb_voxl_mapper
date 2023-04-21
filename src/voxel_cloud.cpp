@@ -63,44 +63,44 @@ void VoxelCloud::merge(const VoxelCloud& other)
     openvdb::points::mergePoints(*_grid, *(other.grid()));
 }
 
-void VoxelCloud::remove(const float stamp)
+void VoxelCloud::remove(const AttStampT stamp)
 {
   // handle edge cases
   if (this->empty())
     return;
 
   // construct evaluation criteria (TRUE == keep the associated point)
-  auto valid = [stamp] (const float& val) -> bool { return val != stamp; };
+  auto valid = [stamp] (const AttStampT& val) -> bool { return val != stamp; };
 
   // filter grid
-  ops::drop_by_attribute_criterion<float>(_grid->tree(), "stamp", valid);
+  ops::drop_by_attribute_criterion<AttStampT>(_grid->tree(), ATT_STAMP, valid);
 }
 
-void VoxelCloud::remove_before(const float stamp)
+void VoxelCloud::remove_before(const AttStampT stamp)
 {
   // handle edge cases
   if (this->empty())
     return;
 
   // construct evaluation criteria (TRUE == keep the associated point)
-  auto valid = [stamp] (const float& val) -> bool { return val > stamp; };
+  auto valid = [stamp] (const AttStampT& val) -> bool { return val > stamp; };
 
   // filter grid
-  ops::drop_by_attribute_criterion<float>(_grid->tree(), "stamp", valid);
+  ops::drop_by_attribute_criterion<AttStampT>(_grid->tree(), ATT_STAMP, valid);
 }
 
-std::pair<float,float> VoxelCloud::time_bounds() const
+std::pair<AttStampT,AttStampT> VoxelCloud::time_bounds() const
 {
   // handle edge cases
   if (this->empty())
     return {0,0};
 
   // initialize results
-  float lower {std::numeric_limits<float>::max()};
-  float upper {std::numeric_limits<float>::min()};
+  AttStampT lower {std::numeric_limits<AttStampT>::max()};
+  AttStampT upper {std::numeric_limits<AttStampT>::min()};
 
   // get min / max values
-  if (openvdb::points::evalMinMax(_grid->tree(), "stamp", lower, upper))
+  if (openvdb::points::evalMinMax(_grid->tree(), ATT_STAMP, lower, upper))
     return {lower, upper};
 
   // failed to process for some reason

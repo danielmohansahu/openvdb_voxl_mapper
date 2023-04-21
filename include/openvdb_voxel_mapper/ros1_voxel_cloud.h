@@ -62,10 +62,10 @@ class ROS1VoxelCloud
   void write(const std::string& filename) const { _cloud.write(filename); };
 
   // PASSTHROUGH API: remove a single timestamp from the cloud
-  void remove(const float stamp) { _cloud.remove(stamp); };
+  void remove(const AttStampT stamp) { _cloud.remove(stamp); };
   
   // PASSTHROUGH API: remove all stamps prior to the given, inclusive
-  void remove_before(const float stamp) { _cloud.remove_before(stamp); };
+  void remove_before(const AttStampT stamp) { _cloud.remove_before(stamp); };
 
  private:
   // configuration options

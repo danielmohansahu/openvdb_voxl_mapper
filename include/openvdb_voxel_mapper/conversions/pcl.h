@@ -48,15 +48,15 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   using namespace openvdb::tools;
 
   // initialize position vectors
-  std::vector<openvdb::Vec3f> positions; positions.reserve(cloud.size());
+  std::vector<AttPositionT> positions; positions.reserve(cloud.size());
 
   // initialize timestamps
   //  note we convert from PCL timestamp convention (microseconds) to ours (seconds)
-  std::vector<float> stamps(cloud.size(), cloud.header.stamp * 1e-6f);
+  std::vector<AttStampT> stamps(cloud.size(), cloud.header.stamp * 1e-6f);
 
   // enable auxiliary attribute vectors
-  std::vector<int> labels; labels.reserve(cloud.size());
-  std::vector<float> confidences; confidences.reserve(cloud.size());
+  std::vector<AttLabelT> labels; labels.reserve(cloud.size());
+  std::vector<AttConfidenceT> confidences; confidences.reserve(cloud.size());
 
   // convert from PCL object to a series of vectors (XYZ, Attributes)
   for (const auto& pt : cloud)
@@ -76,23 +76,23 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   Transform::Ptr transform = Transform::createLinearTransform(opts.voxel_size);
 
   // construct an index grid (mapping from voxel space to the positions array)
-  PointAttributeVector<openvdb::Vec3f> positionsWrapper(positions);
+  PointAttributeVector<AttPositionT> positionsWrapper(positions);
   PointIndexGrid::Ptr pointIndexGrid = createPointIndexGrid<PointIndexGrid>(positionsWrapper, *transform);
 
   // construct grid with embedded point data
   auto grid = createPointDataGrid<NullCodec, PointDataGrid>(*pointIndexGrid, positionsWrapper, *transform);
 
   // Append "stamp" attribute to the grid to hold the timestamp.
-  appendAttribute(grid->tree(), "stamp", TypedAttributeArray<float>::attributeType());
-  populateAttribute(grid->tree(), pointIndexGrid->tree(), "stamp", PointAttributeVector<float>(stamps));
+  appendAttribute(grid->tree(), ATT_STAMP, TypedAttributeArray<AttStampT>::attributeType());
+  populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_STAMP, PointAttributeVector<AttStampT>(stamps));
 
   // Append "label" attribute to the grid to hold the label.
-  appendAttribute(grid->tree(), "label", TypedAttributeArray<int>::attributeType());
-  populateAttribute(grid->tree(), pointIndexGrid->tree(), "label", PointAttributeVector<int>(labels));
+  appendAttribute(grid->tree(), ATT_LABEL, TypedAttributeArray<AttLabelT>::attributeType());
+  populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_LABEL, PointAttributeVector<AttLabelT>(labels));
 
   // Append "confidence" attribute to the grid to hold the confidence.
-  appendAttribute(grid->tree(), "confidence", TypedAttributeArray<float>::attributeType());
-  populateAttribute(grid->tree(), pointIndexGrid->tree(), "confidence", PointAttributeVector<float>(confidences));
+  appendAttribute(grid->tree(), ATT_CONFIDENCE, TypedAttributeArray<AttConfidenceT>::attributeType());
+  populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_CONFIDENCE, PointAttributeVector<AttConfidenceT>(confidences));
 
   // return constructed grid
   return grid;
@@ -117,12 +117,12 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
   for (auto leaf = grid->tree().cbeginLeaf(); leaf; ++leaf)
   {
     // Extract the position attribute from the leaf by name (P is position).
-    AttributeHandle<openvdb::Vec3f> positionHandle(leaf->constAttributeArray("P"));
-    AttributeHandle<float> stampHandle(leaf->constAttributeArray("stamp"));
+    AttributeHandle<AttPositionT> positionHandle(leaf->constAttributeArray(ATT_POSITION));
+    AttributeHandle<AttStampT> stampHandle(leaf->constAttributeArray(ATT_STAMP));
 
     // Extract the attribute handles as well (may be unused)
-    [[maybe_unused]] AttributeHandle<int> labelHandle(leaf->constAttributeArray("label"));
-    [[maybe_unused]] AttributeHandle<float> confidenceHandle(leaf->constAttributeArray("confidence"));
+    [[maybe_unused]] AttributeHandle<AttLabelT> labelHandle(leaf->constAttributeArray(ATT_LABEL));
+    [[maybe_unused]] AttributeHandle<AttConfidenceT> confidenceHandle(leaf->constAttributeArray(ATT_CONFIDENCE));
 
     // Iterate over the point indices in the leaf.
     for (auto index = leaf->beginIndexOn(); index; ++index)

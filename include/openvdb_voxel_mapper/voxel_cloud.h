@@ -29,11 +29,22 @@ class VoxelCloud
 
  public:
   // no empty constructor allowed
-  explicit VoxelCloud(const Options& options = Options()) : _opts(options) {};
+  explicit VoxelCloud(const Options& options = Options()) : _opts(options)
+  {
+    initialize();
+  };
 
   // construct from a PCL cloud
   template <typename PointT>
-  explicit VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud, const Options& options = Options());
+  explicit VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud, const Options& options = Options())
+   : _opts(options)
+  {
+    initialize();
+
+    // construct grid from PCL cloud
+    _grid = ovm::conversions::from_pcl(pcl_cloud, _opts);
+    _grid->setName(_opts.name);
+  }
 
   // return whether or not we have data
   bool empty() const;
@@ -51,14 +62,14 @@ class VoxelCloud
   void merge(const VoxelCloud& other);
 
   // remove a single timestamp from the cloud
-  void remove(const float stamp);
+  void remove(const AttStampT stamp);
   
   // remove all stamps prior to the given, inclusive
-  void remove_before(const float stamp);
+  void remove_before(const AttStampT stamp);
 
   // get min and max timestamps tracked by the cloud
   //  note : this operation requires a full traversal of the cloud
-  std::pair<float,float> time_bounds() const;
+  std::pair<AttStampT,AttStampT> time_bounds() const;
 
   // accessor for core grid - API for operations
   GridT::Ptr grid() { return _grid; }
@@ -70,6 +81,16 @@ class VoxelCloud
   void swap(GridT::Ptr& other) { _grid.swap(other); }
 
  private:
+  // openvdb initialization; can be called multiple times
+  void initialize() const
+  {
+    // perform OpenVDB initialization
+    openvdb::initialize();
+
+    // @TODO use different codecs for various attributes. We don't need 16
+    //  bits to store the confidence [0,1.0].
+  }
+
   // core underlying PointDataGrid
   GridT::Ptr _grid;
 
