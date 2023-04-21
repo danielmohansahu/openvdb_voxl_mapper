@@ -80,7 +80,7 @@ RUN mkdir openvdb/build \
              # -DNANOVDB_BUILD_EXAMPLES=ON \
              # -DOPENVDB_BUILD_UNITTESTS=ON \
              # -DNANOVDB_BUILD_UNITTESTS=ON \
-             -DCMAKE_BUILD_TYPE=Release \
+             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
              .. \
     && make install -j7
 
