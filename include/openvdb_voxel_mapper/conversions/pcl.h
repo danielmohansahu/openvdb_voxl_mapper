@@ -52,7 +52,7 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
 
   // initialize timestamps
   //  note we convert from PCL timestamp convention (microseconds) to ours (seconds)
-  std::vector<AttStampT> stamps(cloud.size(), cloud.header.stamp * 1e-6f);
+  std::vector<AttStampT> stamps(cloud.size(), cloud.header.stamp * 1e-6);
 
   // enable auxiliary attribute vectors
   std::vector<AttLabelT> labels; labels.reserve(cloud.size());
