@@ -19,7 +19,7 @@ Wrapper around a ground plane extractor from bag playback.
 
   <!-- bag playback -->
   <param name="use_sim_time" value="true" />
-  <node name="playback" pkg="rosbag" type="play" args="--clock $(arg bag)" output="screen" />
+  <node name="playback" pkg="rosbag" type="play" args="--clock $(arg bag)" />
   
   <!-- core launch file -->
   <include file="$(find openvdb_voxel_mapping)/ros1/launch/receding_ground_extraction.launch" >
