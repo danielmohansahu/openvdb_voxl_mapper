@@ -10,8 +10,9 @@ Wrapper around a ground plane extractor from bag playback.
 
   <!-- optional args -->
   <arg name="map_topic" default="map" doc="Map topic to publish out." />
-  <arg name="horizon" default="10.0" doc="Time horizon to limit aggregation." />
+  <arg name="horizon" default="2.0" doc="Time horizon to limit aggregation." />
   <arg name="voxel_size" default="0.5" doc="Voxel size - this implicitly maps to output map cell size." />
+  <arg name="verbose" default="false" type="bool" doc="Enable verbose logging." />
 
   <!-- visualization args -->
   <arg name="visualize" default="true" doc="Bring up RVIZ visualization." />
@@ -28,6 +29,7 @@ Wrapper around a ground plane extractor from bag playback.
     <arg name="map_topic" value="$(arg map_topic)" />
     <arg name="horizon" value="$(arg horizon)" />
     <arg name="voxel_size" value="$(arg voxel_size)" />
+    <arg name="verbose" value="$(arg verbose)" />
   </include>
 
   <!-- also bring up an RVIZ configuration for viewing -->

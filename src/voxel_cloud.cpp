@@ -85,8 +85,19 @@ void VoxelCloud::remove_before(const AttStampT stamp)
   // construct evaluation criteria (TRUE == keep the associated point)
   auto valid = [stamp] (const AttStampT& val) -> bool { return val > stamp; };
 
+  // debugging
+  const size_t size_initial = (_opts.verbose) ? this->size() : 0;
+
   // filter grid
   ops::drop_by_attribute_criterion<AttStampT>(_grid->tree(), ATT_STAMP, valid);
+  
+  if (_opts.verbose)
+  {
+    const float delta = size_initial - this->size();
+    const auto [lower,upper] = this->time_bounds();
+    printf("VoxelCloud::remove_before dropped %f points (%.2f %%)\n", delta, 100.0 * delta / size_initial);
+    printf(" stamps (lower | threshold | upper): %f | %f | %f\n", lower, stamp, upper);
+  }
 }
 
 std::pair<AttStampT,AttStampT> VoxelCloud::time_bounds() const

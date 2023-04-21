@@ -11,8 +11,9 @@ ground plane extraction / publication.
 
   <!-- optional args -->
   <arg name="map_topic" default="map" doc="Map topic to publish out." />
-  <arg name="horizon" default="10.0" doc="Time horizon to limit aggregation." />
+  <arg name="horizon" default="2.0" doc="Time horizon to limit aggregation." />
   <arg name="voxel_size" default="0.5" doc="Voxel size - this implicitly maps to output map cell size." />
+  <arg name="verbose" default="false" type="bool" doc="Enable verbose logging." />
 
   <!-- launch core node -->
   <!-- launch-prefix="xterm -e gdb -ex run -args" -->
@@ -23,6 +24,7 @@ ground plane extraction / publication.
     <param name="map_topic" value="$(arg map_topic)" />
     <param name="horizon" value="$(arg horizon)" />
     <param name="voxel_size" value="$(arg voxel_size)" />
+    <param name="verbose" value="$(arg verbose)" />
   </node>
 
 </launch>

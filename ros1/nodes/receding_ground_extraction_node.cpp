@@ -13,6 +13,7 @@
 
 // ROS
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <grid_map_msgs/GridMap.h>
 
@@ -43,8 +44,13 @@ int main(int argc, char ** argv)
   ovm::Options opts;
   const std::string map_topic = pnh.param("map_topic", std::string("map"));
   const std::string full_cloud_topic = pnh.param("full_cloud_topic", std::string("full_cloud"));
-  const double horizon = pnh.param("horizon", 10.0);
+  const double horizon = pnh.param("horizon", 2.0);
+  opts.verbose = pnh.param("verbose", false);
   opts.voxel_size = pnh.param("voxel_size", 0.5);
+
+  // try to configure ROS logger based on desired verbosity
+  if (opts.verbose && ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
+    ros::console::notifyLoggerLevelsChanged();
 
   // initialize tf listener / buffer
   auto tfb = std::make_shared<tf2_ros::Buffer>();

@@ -34,6 +34,7 @@ struct Options
   AttLabelT free_label {0};                 // label for free space, e.g. ray trace cleared
   std::vector<AttLabelT> ground_labels {};  // labels considered 'ground' for operations
   std::string name {"OVM Grid"};            // string identifier for the grid
+  bool verbose {false};                     // operate in verbose logging mode
 }; // struct Options
 
 // Axis-aligned map structure used as the final output of Mapping.
