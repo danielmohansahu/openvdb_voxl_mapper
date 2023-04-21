@@ -37,7 +37,8 @@ concept bool HasConfidence = requires(PointT pt) { {pt.confidence} -> bool; };
 // construct an OpenVDB PointDataGrid from a PCL PointCloud
 template <typename PointT>
 requires HasXYZ<PointT>
-openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& cloud, const Options& opts = Options())
+openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& cloud,
+                                             const std::shared_ptr<Options>& opts)
 {
   // @TODO consider making a wrapper around a PCL cloud directly to avoid copying
   //    into a std::vector; need to ensure this works as well with attributes!
@@ -46,6 +47,11 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   using namespace openvdb::points;
   using namespace openvdb::math;
   using namespace openvdb::tools;
+
+  // sanity checks
+  if (cloud.header.frame_id != opts->frame)
+    throw std::runtime_error("Frame mismatch! Current '" + opts->frame
+                             + "' vs. incoming '" + cloud.header.frame_id + "'.");
 
   // initialize position vectors
   std::vector<AttPositionT> positions; positions.reserve(cloud.size());
@@ -65,15 +71,15 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
     if constexpr (HasLabel<PointT>)
       labels.emplace_back(pt.label);
     else
-      labels.emplace_back(opts.default_label);
+      labels.emplace_back(opts->default_label);
     if constexpr (HasConfidence<PointT>)
       confidences.emplace_back(pt.confidence);
     else
-      confidences.emplace_back(opts.default_confidence);
+      confidences.emplace_back(opts->default_confidence);
   }
 
   // construct a standard linear transform (i.e. all Voxels are cubes)
-  Transform::Ptr transform = Transform::createLinearTransform(opts.voxel_size);
+  Transform::Ptr transform = Transform::createLinearTransform(opts->voxel_size);
 
   // construct an index grid (mapping from voxel space to the positions array)
   PointAttributeVector<AttPositionT> positionsWrapper(positions);
@@ -101,7 +107,8 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
 // convert an openvdb point grid to a PCL PointCloud
 template <typename PointT = pcl::PointXYZ>
 requires HasXYZ<PointT>
-std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGrid::Ptr& grid)
+std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGrid::Ptr& grid,
+                                              const std::shared_ptr<Options>& options)
 {
   using namespace openvdb::points;
 
@@ -150,6 +157,7 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
 
   // update metadata (PCL convention has timestamps in microseconds)
   cloud.header.stamp *= 1e6;
+  cloud.header.frame_id = options->frame;
 
   // return full cloud
   return cloud;

@@ -24,7 +24,7 @@ class ROS1VoxelCloud
 {
  public:
   // expected constructor
-  explicit ROS1VoxelCloud(const Options& options = Options())
+  explicit ROS1VoxelCloud(const std::shared_ptr<Options>& options = std::make_shared<Options>())
    : _opts(options), _cloud(options) {}
 
   // merge an incoming sensor_msgs::PointCloud2 cloud
@@ -32,7 +32,7 @@ class ROS1VoxelCloud
   void merge(const sensor_msgs::PointCloud2& msg) { _cloud.merge(conversions::from_ros<PointT>(msg, _opts)); }
   
   // convert current full cloud to a sensor_msgs::PointCloud2
-  std::optional<sensor_msgs::PointCloud2> cloud(const std::string& frame) const { return conversions::to_ros(_cloud, frame); }
+  std::optional<sensor_msgs::PointCloud2> cloud(const std::string& frame) const { return conversions::to_ros(_cloud, _opts); }
 
   // extract the ground plane of the current cloud
   std::optional<grid_map_msgs::GridMap> ground_plane(const bool gpu = true) const
@@ -42,7 +42,7 @@ class ROS1VoxelCloud
                          : ops::ground_plane_extraction_geometric(_cloud.grid())
         ; map)
       // conversion succeeded - convert to grid map
-      return conversions::to_ros(*map, "ground");
+      return conversions::to_ros(*map, "ground", _opts);
     return std::nullopt;
   }
 
@@ -69,8 +69,7 @@ class ROS1VoxelCloud
 
  private:
   // configuration options
-  // @TODO make shared with underlying cloud
-  Options _opts;
+  std::shared_ptr<Options> _opts;
  
   // core underlying voxel cloud (encapsulation > inheritance)
   VoxelCloud _cloud;

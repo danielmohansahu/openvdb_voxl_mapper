@@ -35,8 +35,8 @@ TEST_F(TestOVMOperations, testGroundPlane)
   }
 
   // set voxel size to 1.0 meter
-  ovm::Options opts {};
-  opts.voxel_size = 1.0;
+  auto opts = std::make_shared<ovm::Options>();
+  opts->voxel_size = 1.0;
 
   // construct a cloud
   ovm::VoxelCloud cloud(pcl_cloud, opts);

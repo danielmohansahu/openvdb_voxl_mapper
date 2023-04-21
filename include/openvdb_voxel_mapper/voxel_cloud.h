@@ -29,21 +29,24 @@ class VoxelCloud
 
  public:
   // no empty constructor allowed
-  explicit VoxelCloud(const Options& options = Options()) : _opts(options)
+  explicit VoxelCloud(const std::shared_ptr<Options>& options = std::make_shared<Options>())
+   : _opts(options)
   {
     initialize();
   };
 
   // construct from a PCL cloud
   template <typename PointT>
-  explicit VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud, const Options& options = Options())
+  VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud,
+             const std::shared_ptr<Options>& options = std::make_shared<Options>())
    : _opts(options)
   {
     initialize();
 
     // construct grid from PCL cloud
+    _opts->frame = pcl_cloud.header.frame_id;
     _grid = ovm::conversions::from_pcl(pcl_cloud, _opts);
-    _grid->setName(_opts.name);
+    _grid->setName(_opts->name);
   }
 
   // return whether or not we have data
@@ -95,7 +98,7 @@ class VoxelCloud
   GridT::Ptr _grid;
 
   // configuration options
-  Options _opts {};
+  std::shared_ptr<Options> _opts;
 
 }; // class VoxelCloud
 

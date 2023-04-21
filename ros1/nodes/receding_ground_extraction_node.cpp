@@ -41,15 +41,15 @@ int main(int argc, char ** argv)
     throw std::runtime_error("Missing required ros param 'fixed_frame'.");
 
   // configuration - optional params
-  ovm::Options opts;
+  auto opts = std::make_shared<ovm::Options>();
   const std::string map_topic = pnh.param("map_topic", std::string("map"));
   const std::string full_cloud_topic = pnh.param("full_cloud_topic", std::string("full_cloud"));
   const double horizon = pnh.param("horizon", 2.0);
-  opts.verbose = pnh.param("verbose", false);
-  opts.voxel_size = pnh.param("voxel_size", 0.5);
+  opts->verbose = pnh.param("verbose", false);
+  opts->voxel_size = pnh.param("voxel_size", 0.5);
 
   // try to configure ROS logger based on desired verbosity
-  if (opts.verbose && ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
+  if (opts->verbose && ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
     ros::console::notifyLoggerLevelsChanged();
 
   // initialize tf listener / buffer

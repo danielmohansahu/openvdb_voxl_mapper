@@ -39,10 +39,11 @@ class TestOVMConversions: public ::testing::Test
     const auto original_cloud = make_random_pcl_cloud<PointT>();
 
     // convert to OpenVDB grid
-    const auto grid = from_pcl(original_cloud);
+    const auto opts = std::make_shared<ovm::Options>();
+    const auto grid = from_pcl(original_cloud, opts);
 
     // convert back to pcl cloud
-    const auto new_cloud = to_pcl(grid);
+    const auto new_cloud = to_pcl(grid, opts);
     ASSERT_TRUE(new_cloud);
 
     // verify all points are the same
