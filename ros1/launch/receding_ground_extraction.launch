@@ -13,7 +13,7 @@ ground plane extraction / publication.
   <arg name="map_topic" default="map" doc="Map topic to publish out." />
   <arg name="horizon" default="2.0" doc="Time horizon to limit aggregation." />
   <arg name="voxel_size" default="0.5" doc="Voxel size - this implicitly maps to output map cell size." />
-  <arg name="verbose" default="false" type="bool" doc="Enable verbose logging." />
+  <arg name="verbose" default="false" doc="Enable verbose logging." />
 
   <!-- launch core node -->
   <!-- launch-prefix="xterm -e gdb -ex run -args" -->
