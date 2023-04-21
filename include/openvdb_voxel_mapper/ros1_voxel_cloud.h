@@ -35,14 +35,18 @@ class ROS1VoxelCloud
   std::optional<sensor_msgs::PointCloud2> cloud(const std::string& frame) const { return conversions::to_ros(_cloud, _opts); }
 
   // extract the ground plane of the current cloud
-  std::optional<grid_map_msgs::GridMap> ground_plane(const bool gpu = true) const
+  std::optional<grid_map_msgs::GridMap> ground_plane(const bool gpu = false) const
   {
+    // get timestamp of result
     // perform ground plane extraction via specified method
     if (auto map = (gpu) ? ops::ground_plane_extraction_geometric_cuda(_cloud.grid())
                          : ops::ground_plane_extraction_geometric(_cloud.grid())
         ; map)
+    {
       // conversion succeeded - convert to grid map
-      return conversions::to_ros(*map, "ground", _opts);
+      const auto [lower, upper] = time_bounds();
+      return conversions::to_ros(*map, _opts, "ground", upper);
+    }
     return std::nullopt;
   }
 
@@ -67,7 +71,10 @@ class ROS1VoxelCloud
   // PASSTHROUGH API: remove all stamps prior to the given, inclusive
   void remove_before(const AttStampT stamp) { _cloud.remove_before(stamp); };
 
- private:
+  // PASSTHROUGH API: return the (lower,upper) timestamp bounds of the grid
+  std::pair<AttStampT,AttStampT> time_bounds() const { return _cloud.time_bounds(); };
+
+ protected:
   // configuration options
   std::shared_ptr<Options> _opts;
  

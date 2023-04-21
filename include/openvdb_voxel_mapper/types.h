@@ -57,11 +57,16 @@ struct Map
   // convenience constructor from an openvdb bounding box
   Map(const openvdb::CoordBBox& bbox, const openvdb::math::Transform& tf)
   {
-    // get dimensions and origin of grid bounding box
+    // get dimensions of the bounding box
     const auto dimensions = bbox.dim();
-    const auto origin = tf.indexToWorld(bbox.min());
+    
+    // we follow the convention that the center is our origin
+    const auto origin = tf.indexToWorld( (bbox.max() - bbox.min()).asVec3d() / 2.0);
+    pose = PoseT(origin.x(), origin.y());
+
+    // map dimensions correspond to the X / Y dimensions, but are flipped
+    //  because of the -90 degree rotation between Eigen and OpenVDB coordinates
     map = MapT::Constant(dimensions.y(), dimensions.x(), NAN);
-    pose = PoseT {origin.x(), origin.y()};
   }
 
   // maintain default constructor

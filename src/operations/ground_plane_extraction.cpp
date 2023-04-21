@@ -52,8 +52,8 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
       const AttPositionT worldPosition = grid->transform().indexToWorld(voxelPosition + xyz);
       
       // update 2D map value with the lowest Z value found so far
-      const auto coords = xyz - bbox.min();
-      auto& val = result.map.coeffRef(coords.y(), coords.x());
+      const auto [row, col] = idx_to_rc(xyz.x(), xyz.y(), bbox.min().x(), bbox.max().y());
+      auto& val = result.map.coeffRef(row, col);
       val = (std::isnan(val)) ? worldPosition.z() : std::min(val, worldPosition.z());
     }
   }

@@ -16,6 +16,7 @@
 
 // OVM
 #include <openvdb_voxel_mapper/types.h>
+#include <openvdb_voxel_mapper/operations/operation_utils.h>
 
 namespace ovm::ops
 {
@@ -80,7 +81,8 @@ __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
   }
 
   // update array element representing the minimum Z value in a column
-  deviceMap[j + i * (ymax - ymin + 1)] = min_z;
+  const auto [row,col] = idx_to_rc(i, j, xmin, ymax);
+  deviceMap[row + col * (xmax - xmin + 1)] = min_z;
 }
 
 extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,

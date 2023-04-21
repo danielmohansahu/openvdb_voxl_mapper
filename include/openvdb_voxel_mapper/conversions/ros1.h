@@ -5,6 +5,7 @@
 #pragma once
 
 // STL
+#include <assert.h>
 #include <optional>
 #include <type_traits>
 
@@ -55,8 +56,9 @@ std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud,
 
 // convert a ovm::Map to a ROS grid map
 std::optional<grid_map_msgs::GridMap> to_ros(const ovm::Map& map,
+                                             const std::shared_ptr<Options>& opts,
                                              const std::string& layer,
-                                             const std::shared_ptr<Options>& opts)
+                                             const double stamp)
 {
   // compile time sanity checks
   static_assert(std::is_same_v<grid_map::GridMap::Matrix, ovm::Map::MapT>, "Internal Map type mismatch.");
@@ -67,11 +69,20 @@ std::optional<grid_map_msgs::GridMap> to_ros(const ovm::Map& map,
 
   // initialize a grid_map::GridMap object
   grid_map::GridMap grid;
-  grid.setPosition({map.pose.x(), map.pose.y()});
-  grid.add(layer, map.map);
+
+  // set metadata, including convention conversions (e.g. seconds -> nanoseconds)
+  const auto length = grid_map::Length(map.map.rows() * opts->voxel_size, map.map.cols() * opts->voxel_size);
+  const auto position = grid_map::Position(map.pose.x(), map.pose.y());
+  grid.setGeometry(length, opts->voxel_size, position);
   grid.setFrameId(opts->frame);
-  // @TODO 
-  // grid.setTimestamp !!!
+  grid.setTimestamp(stamp * 1e9);
+
+  // add actual grid data
+  grid.add(layer, map.map);
+
+  // sanity checks
+  if (grid.getSize()(0) * grid.getSize()(1) != map.map.cols() * map.map.rows())
+    throw std::runtime_error("Grid conversion failed!");
 
   // convert to a grid_map_msg and return
   grid_map_msgs::GridMap msg;
