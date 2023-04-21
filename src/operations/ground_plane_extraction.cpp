@@ -37,19 +37,19 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
   for (auto leaf = grid->tree().cbeginLeaf(); leaf; ++leaf)
   {
     // Create a read-only AttributeHandle. Position always uses Vec3f.
-    const AttributeHandle<openvdb::Vec3f> handle(leaf->constAttributeArray("P"));
+    const AttributeHandle<AttPositionT> handle(leaf->constAttributeArray(ATT_POSITION));
 
     // Iterate over the point indices in the leaf.
     for (auto idx = leaf->beginIndexOn(); idx; ++idx)
     {
       // Extract the voxel-space position of the point.
-      const openvdb::Vec3f voxelPosition = handle.get(*idx);
+      const AttPositionT voxelPosition = handle.get(*idx);
 
       // Extract the index-space position of the voxel.
       const openvdb::Vec3d xyz = idx.getCoord().asVec3d();
 
       // Compute the world-space position of the point.
-      const openvdb::Vec3f worldPosition = grid->transform().indexToWorld(voxelPosition + xyz);
+      const AttPositionT worldPosition = grid->transform().indexToWorld(voxelPosition + xyz);
       
       // update 2D map value with the lowest Z value found so far
       const auto coords = xyz - bbox.min();
@@ -77,7 +77,13 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
   ovm::Map result {bbox, grid->transform()};
 
   // convert grid from OpenVDB to NanoVDB grid
-  auto gridHandle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(*grid);
+  // N.B.: We first create a copy of our grid and drop unnecessary attributes to:
+  //  1) Reduce the move time from CPU -> GPU
+  //  2) Avoid trying to port unsupported types to NanoVDB (like double...)
+  // This is ok for _this_ operation, but other operations will need to proceed differently.
+  auto temporary_grid = grid->deepCopy();
+  openvdb::points::dropAttributes(temporary_grid->tree(), {ATT_STAMP, ATT_LABEL, ATT_CONFIDENCE});
+  auto gridHandle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(temporary_grid);
 
   // construct a buffer to support host <-> GPU conversion
   nanovdb::CudaDeviceBuffer mapBuffer;
