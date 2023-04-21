@@ -6,12 +6,16 @@
 
 // STL
 #include <optional>
+#include <type_traits>
 
 // ROS1
-#include <grid_map_ros/GridMapRosConverter.hpp>
-#include <grid_map_msgs/GridMap.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
+
+// GridMap
+#include <grid_map_core/GridMap.hpp>
+#include <grid_map_ros/GridMapRosConverter.hpp>
+#include <grid_map_msgs/GridMap.h>
 
 // OVM
 #include "../types.h"
@@ -50,10 +54,29 @@ std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud,
 }
 
 // convert a ovm::Map to a ROS grid map
-std::optional<grid_map_msgs::GridMap> to_ros(const ovm::Map& map, const std::string& layer)
+std::optional<grid_map_msgs::GridMap> to_ros(const ovm::Map& map,
+                                             const std::string& layer,
+                                             const std::shared_ptr<Options>& opts)
 {
-  // I am a stub.
-  return std::nullopt;
+  // compile time sanity checks
+  static_assert(std::is_same_v<grid_map::GridMap::Matrix, ovm::Map::MapT>, "Internal Map type mismatch.");
+
+  // handle edge cases
+  if (map.map.rows() == 0 || map.map.cols() == 0)
+    return std::nullopt;
+
+  // initialize a grid_map::GridMap object
+  grid_map::GridMap grid;
+  grid.setPosition({map.pose.x(), map.pose.y()});
+  grid.add(layer, map.map);
+  grid.setFrameId(opts->frame);
+  // @TODO 
+  // grid.setTimestamp !!!
+
+  // convert to a grid_map_msg and return
+  grid_map_msgs::GridMap msg;
+  grid_map::GridMapRosConverter::toMessage(grid, msg);
+  return msg;
 }
 
 } // namespace ovm::conversions
