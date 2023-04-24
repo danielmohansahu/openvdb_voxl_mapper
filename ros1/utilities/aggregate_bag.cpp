@@ -9,6 +9,10 @@
  * Ego pose correction is done via TF2 - this thus requires
  * the bag to have a functional TF tree.
  * 
+ * Really this node is a silly example. We're not actually using
+ * the spatial information, so it's just a much-less-efficient
+ * version of concatenating the clouds. But it's an example!
+ * 
  * @TODO batch inputs to show speedup.
  * @TODO support .pcd file saving instead of / in addition to .vdb
  */
@@ -121,7 +125,7 @@ int main(int argc, char ** argv)
     {
       // otherwise, assimilate all sensor_msgs::PointCloud2
       if (connection->datatype == "sensor_msgs/PointCloud2")
-        cloud_topics.push_back(opts->cloud_topic);
+        cloud_topics.push_back(connection->topic);
     }
   }
   if (cloud_topics.size() == 0)
@@ -142,7 +146,10 @@ int main(int argc, char ** argv)
   ovm::ros::ROS1VoxelCloud cloud;
 
   // iterate through the bag, accumulating PointClouds
-  std::cout << "Merging clouds..." << std::endl;
+  std::cout << "Merging clouds from the following topics:" << std::endl;
+  for (const auto& topic : cloud_topics)
+    std::cout << "\t" << topic << std::endl;
+
   size_t count {0};
   for (const auto& m : view)
     if (std::find(cloud_topics.begin(), cloud_topics.end(), m.getTopic()) != cloud_topics.end())
