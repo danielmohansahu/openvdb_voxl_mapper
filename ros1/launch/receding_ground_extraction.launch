@@ -17,7 +17,7 @@ ground plane extraction / publication.
 
   <!-- launch core node -->
   <!-- launch-prefix="xterm -e gdb -ex run -args" -->
-  <node name="receding_ground_extraction" pkg="openvdb_voxel_mapping" type="receding_ground_extraction_node"
+  <node name="receding_ground_extraction" pkg="openvdb_voxel_mapper" type="receding_ground_extraction_node"
         output="screen" required="true" >
     <param name="cloud_topic" value="$(arg cloud_topic)" />
     <param name="fixed_frame" value="$(arg fixed_frame)" />

@@ -1,6 +1,6 @@
 # OpenVDB Voxel Mapping library
 cmake_minimum_required (VERSION 3.24)
-project (openvdb_voxel_mapping LANGUAGES CXX CUDA)
+project (openvdb_voxel_mapper LANGUAGES CXX CUDA)
 
 ###############################################################################
 #                                  OPTIONS                                    #

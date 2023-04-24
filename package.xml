@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- ROS1 package.xml specification. -->
 <package format="3">
-  <name>openvdb_voxel_mapping</name>
+  <name>openvdb_voxel_mapper</name>
   <version>1.0.0</version>
   <description>VOXEL Mapping with an OpenVDB Backend.</description>
   <maintainer email="dsahu@fake.mail.com">Daniel M. Sahu</maintainer>
