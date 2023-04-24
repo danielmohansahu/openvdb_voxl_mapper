@@ -2,6 +2,8 @@
  *
  */
 
+#pragma once
+
 // STL
 #include <string>
 
@@ -81,6 +83,13 @@ ovm::VoxelCloud make_random_cloud(const std::string filename = "",
 
   // return full cloud
   return result;
+}
+
+// compare eigen matrices with NANs
+inline bool equal(const Eigen::MatrixXf& a, const Eigen::MatrixXf& b, const float eps = std::numeric_limits<float>::epsilon())
+{
+  // set all NANS to Zero
+  return a.array().isNaN().select(0,a).isApprox(b.array().isNaN().select(0,b), eps);
 }
 
 } // namespace ovm::test

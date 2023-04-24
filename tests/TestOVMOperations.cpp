@@ -13,6 +13,9 @@
 #include <openvdb_voxel_mapper/voxel_cloud.h>
 #include <openvdb_voxel_mapper/operations/ground_plane_extraction.h>
 
+// OVM Test
+#include "test_utilities.h"
+
 // helper class to initialize common structures
 class TestOVMOperations: public ::testing::Test
 {
@@ -26,17 +29,36 @@ TEST_F(TestOVMOperations, testGroundPlane)
 {
   // construct a PCL cloud with hardcoded points
   pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
-  for (int i = -5; i != 6; ++i)
-  {
-    float v = static_cast<float>(i);
-    pcl_cloud.push_back({0, 0, v});   // center column of points
-    pcl_cloud.push_back({v, v, v});   // diagonals have cascading Z
-    pcl_cloud.push_back({v, -v, v});  // diagonals have cascading Z
-  }
+  for (int x = -5; x != 6; ++x)
+    for (int y = -3; y != 4; ++y)
+      for (int z = 1; z != 10; ++z)
+      {
+        // the value of the point is (x + y) * z
+        float v = static_cast<float>((x + y) * z);
+        pcl_cloud.push_back({static_cast<float>(x), static_cast<float>(y), v});
+      }
+
+  // set up ground truth results we expect
+  ovm::Map gt_map ;
+  gt_map.pose = ovm::Map::PoseT {-5,-5};
+  gt_map.map = ovm::Map::MapT::Zero(13, 21);
+  gt_map.map << -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6, NAN, 7, NAN, 8,
+                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+                -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6, NAN, 7,
+                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+                -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6,
+                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+                -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5,
+                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+                -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4,
+                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+                -63, NAN, -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3,
+                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+                -72, NAN, -63, NAN, -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2;
 
   // set voxel size to 1.0 meter
   auto opts = std::make_shared<ovm::Options>();
-  opts->voxel_size = 1.0;
+  opts->voxel_size = 0.5;
 
   // construct a cloud
   ovm::VoxelCloud cloud(pcl_cloud, opts);
@@ -49,23 +71,18 @@ TEST_F(TestOVMOperations, testGroundPlane)
   const auto gpu_map = ovm::ops::ground_plane_extraction_geometric_cuda(cloud.grid());
   ASSERT_TRUE(gpu_map);
 
-  // compare results
+  // compare results between maps
   EXPECT_TRUE(cpu_map->pose == gpu_map->pose);
-  EXPECT_TRUE(cpu_map->map == gpu_map->map);
+  EXPECT_TRUE(ovm::test::equal(cpu_map->map, gpu_map->map));
   
-  // compare each to ground truth result expectation
-  ovm::Map gt_map;
-  gt_map.pose = ovm::Map::PoseT {-5,-5};
-  gt_map.map = ovm::Map::MapT {0,0};
-
+  // compare with ground truth
   EXPECT_TRUE(cpu_map->pose == gt_map.pose);
   EXPECT_TRUE(gpu_map->pose == gt_map.pose);
-  EXPECT_TRUE(cpu_map->map == gt_map.map);
-  EXPECT_TRUE(gpu_map->map == gt_map.map);
-
-  std::cout << "CPU_pose: " << cpu_map->pose << std::endl;
+  EXPECT_TRUE(ovm::test::equal(cpu_map->map, gt_map.map));
+  EXPECT_TRUE(ovm::test::equal(gpu_map->map, gt_map.map));
+  
+  std::cout << "GT_map: \n" << gt_map.map << std::endl;
   std::cout << "CPU_map: \n" << cpu_map->map << std::endl;
-  std::cout << "GPU_pose: " << gpu_map->pose << std::endl;
   std::cout << "GPU_map: \n" << gpu_map->map << std::endl;
 }
 
