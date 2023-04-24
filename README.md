@@ -39,7 +39,7 @@ Several example scripts, nodes, and launch files are provided to demonstrate ROS
 Example | Command
 --- | ---
 Offline Bagged Cloud Aggregation | `rosrun openvdb_voxel_mapper aggregate_bag {BAGFILE}`
-Online Time-Limited Ground Plane Extraction | `roslaunch openvdb_voxel_mapping receding_ground_extraction_playback.launch bag:={BAGFILE} fixed_frame:={FRAME_ID} cloud_topic:={CLOUD_TOPIC}`
+Online Time-Limited Ground Plane Extraction | `roslaunch openvdb_voxel_mapper receding_ground_extraction_playback.launch bag:={BAGFILE} fixed_frame:={FRAME_ID} cloud_topic:={CLOUD_TOPIC}`
 
 ## Examples
 
@@ -48,6 +48,7 @@ The following are GIFs collected during execution of the Ground Plane Extraction
 Dataset | Recording | Recording
 --- | --- | ---
 [Rellis3D](https://arxiv.org/abs/2011.12954) | ![Ground Plane and Raw PC](docs/rellis_3d_playback_map.gif) | ![Ground Plane and Aggregated PC](docs/rellis_3d_playback.gif)
+[DARPA SubT](https://link.springer.com/chapter/10.1007/978-3-030-71151-1_35) | ![Ground Plane and Raw PC](docs/subt_hallway_playback_map.gif) | ![Ground Plane and Aggregated PC](docs/subt_hallway_playback.gif)
 
 
 ## References:
