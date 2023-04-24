@@ -75,7 +75,7 @@ std::optional<grid_map_msgs::GridMap> to_ros(const Eigen::MatrixXf& original_map
   grid_map::GridMap grid;
 
   // set metadata, including convention conversions (e.g. seconds -> nanoseconds)
-  const auto length = grid_map::Length(map.rows(), map.cols()) * opts->voxel_size;
+  const auto length = grid_map::Length(map.rows() * opts->voxel_size, map.cols() * opts->voxel_size);
   const auto position = grid_map::Position(center.x(), center.y());
   grid.setGeometry(length, opts->voxel_size, position);
   grid.setFrameId(opts->frame);
