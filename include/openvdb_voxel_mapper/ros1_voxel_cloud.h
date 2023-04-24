@@ -45,7 +45,7 @@ class ROS1VoxelCloud
     {
       // conversion succeeded - convert to grid map
       const auto [lower, upper] = time_bounds();
-      return conversions::to_ros(*map, _opts, "ground", upper);
+      return conversions::to_ros(*map, _cloud.grid()->evalActiveVoxelBoundingBox(), _opts, "ground", upper);
     }
     return std::nullopt;
   }

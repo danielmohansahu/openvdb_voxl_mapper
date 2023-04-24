@@ -54,34 +54,36 @@ std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud,
   return std::nullopt;
 }
 
-// convert a ovm::Map to a ROS grid map
-std::optional<grid_map_msgs::GridMap> to_ros(const ovm::Map& map,
+// convert a Eigen::MatrixXf to a ROS grid map
+std::optional<grid_map_msgs::GridMap> to_ros(const Eigen::MatrixXf& map,
+                                             const openvdb::CoordBBox& bbox,
                                              const std::shared_ptr<Options>& opts,
                                              const std::string& layer,
                                              const double stamp)
 {
   // compile time sanity checks
-  static_assert(std::is_same_v<grid_map::GridMap::Matrix, ovm::Map::MapT>, "Internal Map type mismatch.");
+  static_assert(std::is_same_v<grid_map::GridMap::Matrix, Eigen::MatrixXf>, "Internal Map type mismatch.");
 
   // handle edge cases
-  if (map.map.rows() == 0 || map.map.cols() == 0)
+  if (map.rows() == 0 || map.cols() == 0)
     return std::nullopt;
 
   // initialize a grid_map::GridMap object
   grid_map::GridMap grid;
 
   // set metadata, including convention conversions (e.g. seconds -> nanoseconds)
-  const auto length = grid_map::Length(map.map.rows() * opts->voxel_size, map.map.cols() * opts->voxel_size);
-  const auto position = grid_map::Position(map.pose.x(), map.pose.y());
+  const auto length = grid_map::Length(map.rows() * opts->voxel_size, map.cols() * opts->voxel_size);
+  // @TODO update position!
+  const auto position = grid_map::Position(0, 0);
   grid.setGeometry(length, opts->voxel_size, position);
   grid.setFrameId(opts->frame);
   grid.setTimestamp(stamp * 1e9);
 
   // add actual grid data
-  grid.add(layer, map.map);
+  grid.add(layer, map);
 
   // sanity checks
-  if (grid.getSize()(0) * grid.getSize()(1) != map.map.cols() * map.map.rows())
+  if (grid.getSize()(0) * grid.getSize()(1) != map.cols() * map.rows())
     throw std::runtime_error("Grid conversion failed!");
 
   // convert to a grid_map_msg and return

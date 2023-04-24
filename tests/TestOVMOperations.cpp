@@ -39,22 +39,21 @@ TEST_F(TestOVMOperations, testGroundPlane)
       }
 
   // set up ground truth results we expect
-  ovm::Map gt_map ;
-  gt_map.pose = ovm::Map::PoseT {-5,-5};
-  gt_map.map = ovm::Map::MapT::Zero(13, 21);
-  gt_map.map << -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6, NAN, 7, NAN, 8,
-                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
-                -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6, NAN, 7,
-                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
-                -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6,
-                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
-                -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5,
-                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
-                -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4,
-                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
-                -63, NAN, -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3,
-                NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
-                -72, NAN, -63, NAN, -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2;
+  Eigen::MatrixXf gt_map ;
+  gt_map = Eigen::MatrixXf::Zero(13, 21);
+  gt_map << -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6, NAN, 7, NAN, 8,
+            NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+            -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6, NAN, 7,
+            NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+            -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5, NAN, 6,
+            NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+            -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4, NAN, 5,
+            NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+            -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3, NAN, 4,
+            NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+            -63, NAN, -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2, NAN, 3,
+            NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+            -72, NAN, -63, NAN, -54, NAN, -45, NAN, -36, NAN, -27, NAN, -18, NAN, -9, NAN, 0, NAN, 1, NAN, 2;
 
   // set voxel size to 1.0 meter
   auto opts = std::make_shared<ovm::Options>();
@@ -72,18 +71,15 @@ TEST_F(TestOVMOperations, testGroundPlane)
   ASSERT_TRUE(gpu_map);
 
   // compare results between maps
-  EXPECT_TRUE(cpu_map->pose == gpu_map->pose);
-  EXPECT_TRUE(ovm::test::equal(cpu_map->map, gpu_map->map));
+  EXPECT_TRUE(ovm::test::equal(*cpu_map, *gpu_map));
   
   // compare with ground truth
-  EXPECT_TRUE(cpu_map->pose == gt_map.pose);
-  EXPECT_TRUE(gpu_map->pose == gt_map.pose);
-  EXPECT_TRUE(ovm::test::equal(cpu_map->map, gt_map.map));
-  EXPECT_TRUE(ovm::test::equal(gpu_map->map, gt_map.map));
+  EXPECT_TRUE(ovm::test::equal(*cpu_map, gt_map));
+  EXPECT_TRUE(ovm::test::equal(*gpu_map, gt_map));
   
-  std::cout << "GT_map: \n" << gt_map.map << std::endl;
-  std::cout << "CPU_map: \n" << cpu_map->map << std::endl;
-  std::cout << "GPU_map: \n" << gpu_map->map << std::endl;
+  std::cout << "GT_map: \n" << gt_map << std::endl;
+  std::cout << "CPU_map: \n" << *cpu_map << std::endl;
+  std::cout << "GPU_map: \n" << *gpu_map << std::endl;
 }
 
 // test label extraction operation

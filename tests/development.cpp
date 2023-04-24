@@ -14,7 +14,7 @@
 // OVM Test
 #include "test_utilities.h"
 
-void print_middle_of_map(const ovm::Map::MapT& map)
+void print_middle_of_map(const Eigen::MatrixXf& map)
 {
   std::cout << "Map's 'center' points: " << std::endl;
   std::cout << map.block<10,10>(map.rows() / 2 - 5, map.cols() / 2 - 5) << std::endl;
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   const auto cpu_map = ovm::ops::ground_plane_extraction_geometric(cloud.grid());
   timer.stop();
   if (cpu_map)
-    print_middle_of_map(cpu_map->map);
+    print_middle_of_map(*cpu_map);
   else
     std::cerr << "FAILED TO CONSTRUCT CPU MAP!!!" << std::endl;
 
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
   const auto gpu_map = ovm::ops::ground_plane_extraction_geometric_cuda(cloud.grid());
   timer.stop();
   if (gpu_map)
-    print_middle_of_map(gpu_map->map);
+    print_middle_of_map(*gpu_map);
   else
     std::cerr << "FAILED TO CONSTRUCT MAP!!!" << std::endl;
 

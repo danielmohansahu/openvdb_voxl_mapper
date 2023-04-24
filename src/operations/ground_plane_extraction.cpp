@@ -21,7 +21,7 @@
 namespace ovm::ops
 {
 
-std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::PointDataGrid::Ptr& grid)
+std::optional<Eigen::MatrixXf> ground_plane_extraction_geometric(const openvdb::points::PointDataGrid::Ptr& grid)
 {
   using namespace openvdb::points;
   
@@ -31,8 +31,8 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
 
   // initialize output map dimensions and pose from the grid's bounding box
   const auto bbox = grid->evalActiveVoxelBoundingBox();
-  ovm::Map result {bbox, grid->transform()};
-
+  Eigen::MatrixXf result = Eigen::MatrixXf::Constant(bbox.dim().y(), bbox.dim().x(), NAN);
+  
   // Iterate over all the leaf nodes in the grid.
   for (auto leaf = grid->tree().cbeginLeaf(); leaf; ++leaf)
   {
@@ -53,7 +53,7 @@ std::optional<Map> ground_plane_extraction_geometric(const openvdb::points::Poin
       
       // update 2D map value with the lowest Z value found so far
       const auto [row, col] = idx_to_rc(xyz.x(), xyz.y(), bbox.min().x(), bbox.max().y());
-      auto& val = result.map.coeffRef(row, col);
+      auto& val = result.coeffRef(row, col);
       val = (std::isnan(val)) ? worldPosition.z() : std::min(val, worldPosition.z());
     }
   }
@@ -66,7 +66,7 @@ extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::Cu
                                            float* deviceMap,
                                            cudaStream_t stream);
 
-std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
+std::optional<Eigen::MatrixXf> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
 {
   // sanity check inputs
   if (!grid || grid->empty())
@@ -74,13 +74,13 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
 
   // initialize output map dimensions and pose from the grid's bounding box
   const auto bbox = grid->evalActiveVoxelBoundingBox();
-  ovm::Map result {bbox, grid->transform()};
+  Eigen::MatrixXf result = Eigen::MatrixXf::Constant(bbox.dim().y(), bbox.dim().x(), NAN);
 
   // more sanity checks (everything needs to have the same size)
   assert (bbox.dim().x() == (bbox.max().x() - bbox.min().x()) + 1);
   assert (bbox.dim().y() == (bbox.max().y() - bbox.min().y()) + 1);
-  assert (bbox.dim().x() == result.map.cols());
-  assert (bbox.dim().y() == result.map.rows());
+  assert (bbox.dim().x() == result.cols());
+  assert (bbox.dim().y() == result.rows());
 
   // convert grid from OpenVDB to NanoVDB grid
   // N.B.: We first create a copy of our grid and drop unnecessary attributes to:
@@ -119,7 +119,7 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
     {
       // @TODO this indexing / frame nonsense really needs to be abstracted.
       const auto [row, col] = idx_to_rc(i + xmin, j + ymin, xmin, ymax);
-      result.map.coeffRef(row, col) = host_map[j + i * (ymax - ymin + 1)];
+      result.coeffRef(row, col) = host_map[j + i * (ymax - ymin + 1)];
     }
 
   // Destroy the CUDA stream
