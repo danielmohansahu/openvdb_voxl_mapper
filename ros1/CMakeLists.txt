@@ -33,6 +33,14 @@ target_compile_options (receding_ground_extraction_node PRIVATE ${OVM_ROS1_COMPI
 set_target_properties (receding_ground_extraction_node PROPERTIES ${OVM_ROS1_TARGET_PROPERTIES})
 
 ###############################################################################
+#                                 TESTS                                       #
+###############################################################################
+
+if (OVM_BUILD_TESTS)
+  add_subdirectory(tests)
+endif (OVM_BUILD_TESTS)
+
+###############################################################################
 #                                INSTALL                                      #
 ###############################################################################
 
