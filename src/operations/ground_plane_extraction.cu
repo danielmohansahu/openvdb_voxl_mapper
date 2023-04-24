@@ -28,16 +28,20 @@ __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
                              const int ymin, const int ymax,
                              const int zmin, const int zmax)
 {
-  // get the indices of this voxel (which correspond to the 2D grid, and the CUDA thread)
+  // get the indices of this CUDA thread (which correspond to the 2D grid)
   const int i = blockIdx.x * blockDim.x + threadIdx.x;
   const int j = blockIdx.y * blockDim.y + threadIdx.y;
+  
+  // get the voxel indices, which are just a translation from the CUDA indices
+  const int i_vox = i + xmin;
+  const int j_vox = j + ymin;
 
   // ignore out of bounds threads
-  if (i > xmax - xmin || j > ymax - ymin)
+  if (i_vox > xmax || j_vox > ymax)
     return;
 
   // construct coordinate accessor for openvdb voxel in index space ([0,inf) -> (-inf, inf))
-  const nanovdb::Coord ijk_begin {i + xmin, j + ymin, 0};
+  const nanovdb::Coord ijk_begin {i_vox, j_vox, 0};
 
   // construct accessor and intra-voxel point iterators
   const nanovdb::Vec3f *begin = nullptr, *end = nullptr;
@@ -80,9 +84,8 @@ __global__ void min_z_kernel(const nanovdb::NanoGrid<uint32_t>& grid,
       break;
   }
 
-  // update array element representing the minimum Z value in a column
-  const auto [row,col] = idx_to_rc(i, j, xmin, ymax);
-  deviceMap[row + col * (xmax - xmin + 1)] = min_z;
+  // update array element representing the minimum Z value in a column (or NAN, if none found)
+  deviceMap[j + i * (ymax - ymin + 1)] = min_z;
 }
 
 extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::CudaDeviceBuffer>& gridHandle,

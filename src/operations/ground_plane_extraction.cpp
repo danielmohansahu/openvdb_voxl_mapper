@@ -76,6 +76,12 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
   const auto bbox = grid->evalActiveVoxelBoundingBox();
   ovm::Map result {bbox, grid->transform()};
 
+  // more sanity checks (everything needs to have the same size)
+  assert (bbox.dim().x() == (bbox.max().x() - bbox.min().x()) + 1);
+  assert (bbox.dim().y() == (bbox.max().y() - bbox.min().y()) + 1);
+  assert (bbox.dim().x() == result.map.cols());
+  assert (bbox.dim().y() == result.map.rows());
+
   // convert grid from OpenVDB to NanoVDB grid
   // N.B.: We first create a copy of our grid and drop unnecessary attributes to:
   //  1) Reduce the move time from CPU -> GPU
@@ -87,7 +93,7 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
 
   // construct a buffer to support host <-> GPU conversion
   nanovdb::CudaDeviceBuffer mapBuffer;
-  mapBuffer.init(result.map.rows() * result.map.cols() * sizeof(float));
+  mapBuffer.init(bbox.dim().x() * bbox.dim().y() * sizeof(float));
 
   // Create a CUDA stream to allow for asynchronous copy of pinned CUDA memory.
   cudaStream_t stream;
@@ -106,9 +112,15 @@ std::optional<Map> ground_plane_extraction_geometric_cuda(const openvdb::points:
 
   // convert from matHandle to eigen result
   float* host_map = reinterpret_cast<float*>(mapBuffer.data());
-  for (auto i = 0; i != result.map.cols(); ++i)
-    for (auto j = 0; j != result.map.rows(); ++j)
-      result.map.coeffRef(j,i) = host_map[j + i * result.map.rows()];
+  const auto xmin = bbox.min().x(), xmax = bbox.max().x();
+  const auto ymin = bbox.min().y(), ymax = bbox.max().y();
+  for (auto i = 0; i != (xmax - xmin + 1); ++i)
+    for (auto j = 0; j != (ymax - ymin + 1); ++j)
+    {
+      // @TODO this indexing / frame nonsense really needs to be abstracted.
+      const auto [row, col] = idx_to_rc(i + xmin, j + ymin, xmin, ymax);
+      result.map.coeffRef(row, col) = host_map[j + i * (ymax - ymin + 1)];
+    }
 
   // Destroy the CUDA stream
   cudaStreamDestroy(stream);
