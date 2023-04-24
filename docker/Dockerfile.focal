@@ -1,0 +1,96 @@
+# Development Docker image for openvdb_voxl_aggregator
+# 
+# This image starts with a basic CUDA image and layers
+# ROS and OpenVDB (and NanoVDB) on top.
+
+FROM nvidia/cuda:11.7.1-devel-ubuntu20.04 AS cuda-base
+
+# install common utilities
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      vim \
+      byobu \
+      gdb \
+      lsb-release \
+      curl \
+      git \
+      wget \
+      software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# add ROS and kitware PPAs
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 42D5A192B819C5DA
+RUN apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+
+# install ROS Noetic and latest cmake, as well as OpenVDB dependencies
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      ros-noetic-ros-base \
+      python3-pip \
+      cmake \
+      libblosc-dev \
+      libjemalloc-dev \
+      libglfw3-dev \
+      freeglut3-dev \
+      libeigen3-dev \
+      libpcl-dev \
+      g++-10 \
+    && rm -rf /var/lib/apt/lists/*
+
+# install python packages
+RUN python3 -m pip install --upgrade pip \
+    && python3 -m pip install rosdep catkin-tools
+
+# switch to GCC 10 by default
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10
+
+# install boost (default Ubuntu distribution is too low)
+WORKDIR /tmp
+RUN wget -nv https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz
+RUN tar -xzf boost_1_81_0.tar.gz \
+    && cd boost_1_81_0 \
+    && ./bootstrap.sh \
+    && ./b2 install
+
+# install TBB (default Ubuntu distribution is too low)
+RUN git clone https://github.com/oneapi-src/oneTBB.git -b v2021.8.0
+RUN mkdir oneTBB/build \
+    && cd oneTBB/build \
+    && cmake -DTBB_TEST=OFF .. \
+    && cmake --build . \
+    && cmake --install .
+
+# clone and build openvdb
+WORKDIR /opt
+RUN git clone https://github.com/AcademySoftwareFoundation/openvdb.git -b v10.0.1
+RUN mkdir openvdb/build \
+    && cd openvdb/build \
+    && cmake -DOPENVDB_BUILD_NANOVDB=ON \
+             -DNANOVDB_BUILD_TOOLS=ON \
+             -DNANOVDB_USE_CUDA=ON \
+             -DNANOVDB_USE_OPENVDB=ON \
+             -DOPENVDB_BUILD_VDB_VIEW=ON \
+             # -DNANOVDB_BUILD_BENCHMARK=ON \
+             # -DOPENVDB_BUILD_VDB_RENDER=ON \
+             # -DNANOVDB_BUILD_EXAMPLES=ON \
+             # -DOPENVDB_BUILD_UNITTESTS=ON \
+             # -DNANOVDB_BUILD_UNITTESTS=ON \
+             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+             .. \
+    && make install -j7
+
+# install additional OVM specific dependencies (e.g. ROS packages)
+COPY package.xml /tmp/ovm-ros-deps/package.xml
+RUN rosdep init && rosdep update && apt update \
+    && rosdep install --from-paths /tmp/ovm-ros-deps -yi --rosdistro=noetic \
+    && rm -rf /var/lib/apt/lists/*
+
+# drop into expected workspace
+RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc
+WORKDIR /workspace
+CMD bash
