@@ -27,15 +27,30 @@ class ROS1VoxelCloud
   explicit ROS1VoxelCloud(const std::shared_ptr<Options>& options = std::make_shared<Options>())
    : _opts(options), _cloud(options) {}
 
+  // construct from a sensor_msgs::PointCloud2
+  template <typename PointT = pcl::PointXYZ>
+  ROS1VoxelCloud(const sensor_msgs::PointCloud2& msg, const std::shared_ptr<Options>& options = std::make_shared<Options>())
+   : _opts(options), _cloud(options)
+  {
+    _cloud.merge(conversions::from_ros<PointT>(msg, _opts));
+  }
+  
   // merge an incoming sensor_msgs::PointCloud2 cloud
   template <typename PointT = pcl::PointXYZ>
-  void merge(const sensor_msgs::PointCloud2& msg) { _cloud.merge(conversions::from_ros<PointT>(msg, _opts)); }
+  void merge(const sensor_msgs::PointCloud2& msg)
+  {
+    _cloud.merge(conversions::from_ros<PointT>(msg, _opts));
+  }
   
   // convert current full cloud to a sensor_msgs::PointCloud2
-  std::optional<sensor_msgs::PointCloud2> cloud(const std::string& frame) const { return conversions::to_ros(_cloud, _opts); }
+  std::optional<sensor_msgs::PointCloud2> cloud(const std::string& frame) const
+  {
+    return conversions::to_ros(_cloud, _opts);
+  }
 
   // extract the ground plane of the current cloud
-  std::optional<grid_map_msgs::GridMap> ground_plane(const bool gpu = false) const
+  std::optional<grid_map_msgs::GridMap> ground_plane(const bool gpu = false,
+                                                     const std::string& layer_name = "elevation") const
   {
     // get timestamp of result
     // perform ground plane extraction via specified method
@@ -43,10 +58,12 @@ class ROS1VoxelCloud
                          : ops::ground_plane_extraction_geometric(_cloud.grid())
         ; map)
     {
-      // conversion succeeded - convert to grid map
-      const auto [lower, upper] = time_bounds();
-      return conversions::to_ros(*map, _cloud.grid()->evalActiveVoxelBoundingBox(), _opts, "ground", upper);
+      // extraction succeeded - convert to grid map
+      const auto [lower, stamp] = time_bounds();
+      const auto center = _cloud.grid()->transform().indexToWorld(_cloud.grid()->evalActiveVoxelBoundingBox().getCenter());
+      return conversions::to_ros(*map, _opts, center, layer_name, stamp);
     }
+    // extraction failed
     return std::nullopt;
   }
 
