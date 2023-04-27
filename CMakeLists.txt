@@ -69,6 +69,9 @@ if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_CXX_FLAGS_RelWithDebInfo "-ggdb")
 endif ()
 
+# lint C++ files
+set (CMAKE_CXX_CPPCHECK "cppcheck;--std=c++20;--enable=performance")
+
 ###############################################################################
 #                                 DEBUG                                       #
 ###############################################################################
