@@ -96,6 +96,9 @@ class VoxelCloud
 
   // const accessor for core grid - API for operations
   const GridT::Ptr grid() const { return _grid; }
+  
+  // const accessor for options
+  const std::shared_ptr<const Options> options() const { return _opts; }
 
  private:
   // openvdb initialization; can be called multiple times
