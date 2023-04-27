@@ -29,7 +29,7 @@ class VoxelCloud
 
  public:
   // no empty constructor allowed
-  explicit VoxelCloud(const std::shared_ptr<Options>& options = std::make_shared<Options>())
+  VoxelCloud(const std::shared_ptr<const Options>& options = std::make_shared<Options>())
    : _opts(options)
   {
     initialize();
@@ -38,7 +38,7 @@ class VoxelCloud
   // construct from a PCL cloud
   template <typename PointT>
   VoxelCloud(const pcl::PointCloud<PointT>& pcl_cloud,
-             const std::shared_ptr<Options>& options = std::make_shared<Options>())
+             const std::shared_ptr<const Options>& options = std::make_shared<Options>())
    : _opts(options)
   {
     initialize();
@@ -64,15 +64,17 @@ class VoxelCloud
     if (this->empty())
     {
       // initialize from this cloud
-      _opts->frame = pcl_cloud.header.frame_id;
       _grid = ovm::conversions::from_pcl(pcl_cloud, _opts);
+
+      // set some metadata; this is mostly just for debugging.
       _grid->setName(_opts->name);
+      _grid->insertMeta("pcl_frame", openvdb::StringMetadata(pcl_cloud.header.frame_id));
     }
     else
     {
       // sanity checks
-      assert (_opts->frame == other._opts->frame);
-      assert (_grid);
+      assert(_grid);
+      assert(pcl_cloud.header.frame_id == _opts->frame);
 
       // merge
       openvdb::points::mergePoints(*_grid, *ovm::conversions::from_pcl(pcl_cloud, _opts));
@@ -110,7 +112,7 @@ class VoxelCloud
   GridT::Ptr _grid;
 
   // configuration options
-  std::shared_ptr<Options> _opts;
+  const std::shared_ptr<const Options> _opts;
 
 }; // class VoxelCloud
 

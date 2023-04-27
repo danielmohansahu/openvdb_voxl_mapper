@@ -33,6 +33,7 @@ struct Options
   AttLabelT default_label {-1};             // label, if unsupplied
   AttLabelT free_label {0};                 // label for free space, e.g. ray trace cleared
   std::vector<AttLabelT> ground_labels {};  // labels considered 'ground' for operations
+  std::vector<AttLabelT> labels {};         // all supported labels
   std::string name {"OVM Grid"};            // string identifier for the grid
   std::string frame {""};                   // coordinate frame in which we're assembling
   bool verbose {false};                     // operate in verbose logging mode

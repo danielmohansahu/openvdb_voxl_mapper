@@ -38,7 +38,7 @@ concept bool HasConfidence = requires(PointT pt) { {pt.confidence} -> bool; };
 template <typename PointT>
 requires HasXYZ<PointT>
 openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& cloud,
-                                             const std::shared_ptr<Options>& opts)
+                                             const std::shared_ptr<const Options>& opts)
 {
   // @TODO consider making a wrapper around a PCL cloud directly to avoid copying
   //    into a std::vector; need to ensure this works as well with attributes!
@@ -108,7 +108,7 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
 template <typename PointT = pcl::PointXYZ>
 requires HasXYZ<PointT>
 std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGrid::Ptr& grid,
-                                              const std::shared_ptr<Options>& options)
+                                              const std::shared_ptr<const Options>& options)
 {
   using namespace openvdb::points;
 

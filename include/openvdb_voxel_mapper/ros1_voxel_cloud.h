@@ -98,7 +98,7 @@ class ROS1VoxelCloud
 
  protected:
   // configuration options
-  std::shared_ptr<Options> _opts;
+  const std::shared_ptr<Options> _opts;
  
   // core underlying voxel cloud (encapsulation > inheritance)
   VoxelCloud _cloud;

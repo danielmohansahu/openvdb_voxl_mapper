@@ -28,7 +28,7 @@ namespace ovm::conversions
 
 // construct a ROS PointCloud2 into a VoxelCloud
 template <typename PointT>
-VoxelCloud from_ros(const sensor_msgs::PointCloud2& msg, const std::shared_ptr<Options>& opts)
+VoxelCloud from_ros(const sensor_msgs::PointCloud2& msg, const std::shared_ptr<const Options>& opts)
 {  
   // convert to PCL
   pcl::PointCloud<PointT> pcl_cloud;
@@ -40,7 +40,7 @@ VoxelCloud from_ros(const sensor_msgs::PointCloud2& msg, const std::shared_ptr<O
 
 // convert a VoxelCloud into a ROS PointCloud2
 std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud,
-                                               const std::shared_ptr<Options>& opts)
+                                               const std::shared_ptr<const Options>& opts)
 {
   // convert to PCL and then to a PointCloud2
   if (auto pcl_cloud = to_pcl(cloud.grid(), opts); pcl_cloud)
@@ -56,7 +56,7 @@ std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud,
 
 // convert a Eigen::MatrixXf to a ROS grid map
 std::optional<grid_map_msgs::GridMap> to_ros(const Eigen::MatrixXf& original_map,
-                                             const std::shared_ptr<Options>& opts,
+                                             const std::shared_ptr<const Options>& opts,
                                              const openvdb::Vec3d& center,
                                              const std::string& layer,
                                              const double stamp)
