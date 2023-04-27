@@ -1,5 +1,8 @@
 /* Conversions to and from OpenVDB types for PCL.
  *
+ * @TODO: The logic in these conversions has gotten pretty convoluted;
+ *        figure out a way to abstract some of the per-template 
+ *        conversion logic into standalone functions.
  */
 
 #pragma once
@@ -48,34 +51,60 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   using namespace openvdb::math;
   using namespace openvdb::tools;
 
+  // useful variables
+  const size_t num_labels = opts->labels.size();
+
   // sanity checks
   if (cloud.header.frame_id != opts->frame)
     throw std::runtime_error("Frame mismatch! Current '" + opts->frame
                              + "' vs. incoming '" + cloud.header.frame_id + "'.");
+  if constexpr (!HasLabel<PointT>)
+    if (num_labels != 0)
+      throw std::runtime_error("Semantic extraction requested for invalid Point Type.");
+  
+  // @TODO - emit some sort of warning for this, but it doesn't warrant spam...
+  // if constexpr (!HasLabel<PointT> && HasConfidence<PointT>)
+  //   throw std::runtime_error("PointT has 'confidence' but no 'label' - 'confidence' will be ignored.")
 
   // initialize position vectors
-  std::vector<AttPositionT> positions; positions.reserve(cloud.size());
+  std::vector<AttPositionT> positions;
+  positions.reserve(cloud.size());
 
   // initialize timestamps
   //  note we convert from PCL timestamp convention (microseconds) to ours (seconds)
   std::vector<AttStampT> stamps(cloud.size(), cloud.header.stamp * 1e-6);
 
-  // enable auxiliary attribute vectors
-  std::vector<AttLabelT> labels; labels.reserve(cloud.size());
-  std::vector<AttConfidenceT> confidences; confidences.reserve(cloud.size());
+  // enable confidence attribute - each point gets a confidence value per label
+  std::vector<AttConfidenceT> confidences(cloud.size() * num_labels, 0.0);
 
   // convert from PCL object to a series of vectors (XYZ, Attributes)
-  for (const auto& pt : cloud)
+  for (size_t i = 0; i != cloud.size(); ++i)
   {
+    // access point data
+    const auto& pt = cloud[i];
+
+    // get spatial information
     positions.emplace_back(pt.x, pt.y, pt.z);
+    // get confidence information
     if constexpr (HasLabel<PointT>)
-      labels.emplace_back(pt.label);
-    else
-      labels.emplace_back(opts->default_label);
-    if constexpr (HasConfidence<PointT>)
-      confidences.emplace_back(pt.confidence);
-    else
-      confidences.emplace_back(opts->default_confidence);
+      if (num_labels != 0)
+      {
+        // get the confidence value, which might be a default
+        AttConfidenceT confidence = opts->default_confidence;
+        if constexpr (HasConfidence<PointT>)
+          confidence = pt.confidence;
+
+        // sanity checks
+        assert( (confidence >= 0.0f) && (confidence <= 1.0f) );
+
+        // find the index of this label and set the confidence
+        const auto it = std::find(opts->labels.begin(), opts->labels.end(), pt.label);
+
+        // if we don't check it'll assign everything to the first label
+        //  classic premature optimization. but it's something very noticeable on the user end...
+        assert( it != opts->labels.end() );
+        confidences[i * num_labels + std::distance(opts->labels.begin(), it)] = confidence;
+      }
   }
 
   // construct a standard linear transform (i.e. all Voxels are cubes)
@@ -92,13 +121,12 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   appendAttribute(grid->tree(), ATT_STAMP, TypedAttributeArray<AttStampT>::attributeType());
   populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_STAMP, PointAttributeVector<AttStampT>(stamps));
 
-  // Append "label" attribute to the grid to hold the label.
-  appendAttribute(grid->tree(), ATT_LABEL, TypedAttributeArray<AttLabelT>::attributeType());
-  populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_LABEL, PointAttributeVector<AttLabelT>(labels));
-
-  // Append "confidence" attribute to the grid to hold the confidence.
-  appendAttribute(grid->tree(), ATT_CONFIDENCE, TypedAttributeArray<AttConfidenceT>::attributeType());
-  populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_CONFIDENCE, PointAttributeVector<AttConfidenceT>(confidences));
+  if (num_labels != 0)
+  {
+    // Append "confidence" attribute to the grid to hold the confidence. stride is 'num_labels', because each point has num_labels possible confidences
+    appendAttribute(grid->tree(), ATT_CONFIDENCE, TypedAttributeArray<AttConfidenceT>::attributeType(), num_labels);
+    populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_CONFIDENCE, PointAttributeVector<AttConfidenceT>(confidences), num_labels);
+  }
 
   // return constructed grid
   return grid;
@@ -116,6 +144,12 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
   if (!grid || grid->empty())
     return std::nullopt;
 
+  // sanity checks
+  [[maybe_unused]] const size_t num_labels = options->labels.size();
+  if constexpr (HasLabel<PointT>)
+    if (num_labels == 0)
+      throw std::runtime_error("Cannot convert to desired Point Type - no label information.");
+
   // initialize output cloud
   pcl::PointCloud<PointT> cloud;
   cloud.reserve(pointCount(grid->tree()));
@@ -128,8 +162,9 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
     AttributeHandle<AttStampT> stampHandle(leaf->constAttributeArray(ATT_STAMP));
 
     // Extract the attribute handles as well (may be unused)
-    [[maybe_unused]] AttributeHandle<AttLabelT> labelHandle(leaf->constAttributeArray(ATT_LABEL));
-    [[maybe_unused]] AttributeHandle<AttConfidenceT> confidenceHandle(leaf->constAttributeArray(ATT_CONFIDENCE));
+    [[maybe_unused]] std::unique_ptr<AttributeHandle<AttConfidenceT>> confidenceHandle;
+    if constexpr (HasLabel<PointT>)
+      confidenceHandle = std::make_unique<AttributeHandle<AttConfidenceT>>(leaf->constAttributeArray(ATT_CONFIDENCE));
 
     // Iterate over the point indices in the leaf.
     for (auto index = leaf->beginIndexOn(); index; ++index)
@@ -142,9 +177,25 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
 
       // append additional attributes, if supported
       if constexpr (HasLabel<PointT>)
-        point.label = labelHandle.get(*index);
-      if constexpr (HasConfidence<PointT>)
-        point.confidence = confidenceHandle.get(*index);
+      {
+        // sanity checks
+        assert (num_labels != 0);
+        assert (confidenceHandle);
+
+        // extract the top label associated with this point, and possibly the confidence
+        AttConfidenceT max_confidence = -1.0;
+        size_t max_confidence_idx = 0;
+        for (size_t i = 0; i != num_labels; ++i)
+          if (const auto confidence = confidenceHandle->get(*index, i); confidence > max_confidence)
+          {
+            max_confidence     = confidence;
+            max_confidence_idx = i;
+          }
+        // set the values
+        point.label = options->labels[max_confidence_idx];
+        if constexpr (HasConfidence<PointT>)
+          point.confidence = max_confidence;
+      }
 
       // add point to cloud
       cloud.push_back(std::move(point));

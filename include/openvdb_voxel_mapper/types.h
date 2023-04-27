@@ -21,8 +21,7 @@ typedef int             AttLabelT;        // type of label information
 typedef float           AttConfidenceT;   // type of confidence information
 typedef double          AttStampT;        // type of stamp information
 #define ATT_POSITION    "P"               // name of position information
-#define ATT_LABEL       "label"           // name of label information
-#define ATT_CONFIDENCE  "confidence"      // name of confidence information
+#define ATT_CONFIDENCE  "confidences"     // name of confidence information
 #define ATT_STAMP       "stamp"           // name of stamp information
 
 // project configuration options

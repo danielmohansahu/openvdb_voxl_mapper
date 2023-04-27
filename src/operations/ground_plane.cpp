@@ -68,6 +68,8 @@ extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::Cu
 
 std::optional<Eigen::MatrixXf> min_z_ground_plane_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
 {
+  using namespace openvdb::points;
+  
   // sanity check inputs
   if (!grid || grid->empty())
     return std::nullopt;
@@ -88,7 +90,10 @@ std::optional<Eigen::MatrixXf> min_z_ground_plane_cuda(const openvdb::points::Po
   //  2) Avoid trying to port unsupported types to NanoVDB (like double...)
   // This is ok for _this_ operation, but other operations will need to proceed differently.
   auto temporary_grid = grid->deepCopy();
-  openvdb::points::dropAttributes(temporary_grid->tree(), {ATT_STAMP, ATT_LABEL, ATT_CONFIDENCE});
+  if (temporary_grid->tree().cbeginLeaf()->attributeSet().descriptor().find(ATT_CONFIDENCE) != AttributeSet::INVALID_POS)
+    dropAttributes(temporary_grid->tree(), std::vector<std::string>{ATT_STAMP, ATT_CONFIDENCE});
+  else
+    dropAttribute(temporary_grid->tree(), ATT_STAMP);
   auto gridHandle = nanovdb::openToNanoVDB<nanovdb::CudaDeviceBuffer>(temporary_grid);
 
   // construct a buffer to support host <-> GPU conversion
