@@ -62,7 +62,7 @@ TEST_F(TestVoxelCloud, testMerge)
   const size_t num_clouds = 10;
   for (size_t i = 0; i != num_clouds; ++i)
   {
-    auto subcloud = ovm::test::make_random_cloud("", num_points);
+    auto subcloud = ovm::test::make_random_pcl_cloud(num_points);
     cloud.merge(subcloud);
   }
 
@@ -85,16 +85,11 @@ TEST_F(TestVoxelCloud, testDeletion)
     auto pclcloud = ovm::test::make_random_pcl_cloud();
     pclcloud.header.stamp = i * 1e6;   // cast to microseconds per PCL convention
 
-    // convert to voxelcloud
-    ovm::VoxelCloud subcloud(pclcloud);
-    const size_t N = openvdb::points::pointCount(subcloud.grid()->tree());
-    ASSERT_EQ(N, pclcloud.size());
-
     // save this stamp's metadata (stamp (sec), number of points)
-    num_points.insert({i, N});
+    num_points.insert({i, pclcloud.size()});
 
     // merge into the main grid
-    cloud.merge(subcloud);
+    cloud.merge(pclcloud);
   }
 
   // get starting total of points

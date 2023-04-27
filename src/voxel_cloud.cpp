@@ -49,27 +49,6 @@ void VoxelCloud::write(const std::string& filename) const
   }
 }
 
-void VoxelCloud::merge(const VoxelCloud& other)
-{
-  if (other.empty())
-  {
-    // not super useful, but thanks? I guess?
-    return;
-  }
-  else if (this->empty())
-  {
-    // we're empty; just use the other directly
-    _grid = other.grid()->deepCopy();
-    _opts = other._opts;
-  }
-  else
-  {
-    // both VoxelClouds have contents - merge 'other' into ourselves
-    assert (_opts->frame == other._opts->frame);
-    openvdb::points::mergePoints(*_grid, *(other.grid()));
-  }
-}
-
 void VoxelCloud::remove(const AttStampT stamp)
 {
   // handle edge cases

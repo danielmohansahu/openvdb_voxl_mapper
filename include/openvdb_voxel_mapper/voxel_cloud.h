@@ -42,11 +42,7 @@ class VoxelCloud
    : _opts(options)
   {
     initialize();
-
-    // construct grid from PCL cloud
-    _opts->frame = pcl_cloud.header.frame_id;
-    _grid = ovm::conversions::from_pcl(pcl_cloud, _opts);
-    _grid->setName(_opts->name);
+    merge(pcl_cloud);
   }
 
   // return whether or not we have data
@@ -62,7 +58,26 @@ class VoxelCloud
   void write(const std::string& filename) const;
 
   // merge in another point data grid, consuming it in the process
-  void merge(const VoxelCloud& other);
+  template <typename PointT>
+  void merge(const pcl::PointCloud<PointT>& pcl_cloud)
+  {
+    if (this->empty())
+    {
+      // initialize from this cloud
+      _opts->frame = pcl_cloud.header.frame_id;
+      _grid = ovm::conversions::from_pcl(pcl_cloud, _opts);
+      _grid->setName(_opts->name);
+    }
+    else
+    {
+      // sanity checks
+      assert (_opts->frame == other._opts->frame);
+      assert (_grid);
+
+      // merge
+      openvdb::points::mergePoints(*_grid, *ovm::conversions::from_pcl(pcl_cloud, _opts));
+    }
+  }
 
   // remove a single timestamp from the cloud
   void remove(const AttStampT stamp);
@@ -79,9 +94,6 @@ class VoxelCloud
 
   // const accessor for core grid - API for operations
   const GridT::Ptr grid() const { return _grid; }
-
-  // setter for core grid - API for operations
-  void swap(GridT::Ptr& other) { _grid.swap(other); }
 
  private:
   // openvdb initialization; can be called multiple times

@@ -27,12 +27,9 @@ int main(int argc, char** argv)
 
   // generate random clouds outside of the merge timing loop
   timer.start("Generating random clouds");
-  std::vector<ovm::VoxelCloud> random_clouds;
+  std::vector<pcl::PointCloud<pcl::PointXYZ>> random_clouds;
   for (size_t i = 0; i != 100; ++i)
-  {
-    const std::string filename = "raw_" + std::to_string(i) + ".vdb";
-    random_clouds.emplace_back(ovm::test::make_random_cloud(filename, 200000, 1.0 * i, 40.0, 0.5 * i, 40.0, 0.0, 10.0));
-  }
+    random_clouds.emplace_back(ovm::test::make_random_pcl_cloud(200000, 1.0 * i, 40.0, 0.5 * i, 40.0, 0.0, 10.0));
 
   // construct an empty cloud
   ovm::VoxelCloud cloud;
