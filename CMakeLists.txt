@@ -85,8 +85,8 @@ endif ()
 
 set (OVM_SOURCE_FILES
   src/voxel_cloud.cpp
-  src/operations/ground_plane_extraction.cpp
-  src/operations/ground_plane_extraction.cu
+  src/operations/ground_plane.cpp
+  src/operations/ground_plane.cu
 )
 
 set (OVM_INCLUDE_DIRS

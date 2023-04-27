@@ -16,12 +16,12 @@
 #include <nanovdb/util/GridHandle.h>
 
 // OVM
-#include <openvdb_voxel_mapper/operations/ground_plane_extraction.h>
+#include <openvdb_voxel_mapper/operations/ground_plane.h>
 
 namespace ovm::ops
 {
 
-std::optional<Eigen::MatrixXf> ground_plane_extraction_geometric(const openvdb::points::PointDataGrid::Ptr& grid)
+std::optional<Eigen::MatrixXf> min_z_ground_plane(const openvdb::points::PointDataGrid::Ptr& grid)
 {
   using namespace openvdb::points;
   
@@ -66,7 +66,7 @@ extern "C" void launch_ground_plane_kernel(const nanovdb::GridHandle<nanovdb::Cu
                                            float* deviceMap,
                                            cudaStream_t stream);
 
-std::optional<Eigen::MatrixXf> ground_plane_extraction_geometric_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
+std::optional<Eigen::MatrixXf> min_z_ground_plane_cuda(const openvdb::points::PointDataGrid::Ptr& grid)
 {
   // sanity check inputs
   if (!grid || grid->empty())

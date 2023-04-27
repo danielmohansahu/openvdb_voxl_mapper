@@ -9,7 +9,7 @@
 
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
-#include <openvdb_voxel_mapper/operations/ground_plane_extraction.h>
+#include <openvdb_voxel_mapper/operations/ground_plane.h>
 
 // OVM Test
 #include "test_utilities.h"
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 
   // extract ground plane from grid (naive single threaded)
   timer.restart("Extracting ground plane via CPU");
-  const auto cpu_map = ovm::ops::ground_plane_extraction_geometric(cloud.grid());
+  const auto cpu_map = ovm::ops::min_z_ground_plane(cloud.grid());
   timer.stop();
   if (cpu_map)
     print_middle_of_map(*cpu_map);
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 
   // extract ground plane from grid (GPU)
   timer.start("Extracting ground plane via GPU");
-  const auto gpu_map = ovm::ops::ground_plane_extraction_geometric_cuda(cloud.grid());
+  const auto gpu_map = ovm::ops::min_z_ground_plane_cuda(cloud.grid());
   timer.stop();
   if (gpu_map)
     print_middle_of_map(*gpu_map);

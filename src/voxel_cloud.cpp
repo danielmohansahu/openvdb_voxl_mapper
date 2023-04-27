@@ -13,7 +13,7 @@
 
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
-#include <openvdb_voxel_mapper/operations/openvdb_operations.h>
+#include <openvdb_voxel_mapper/operations/openvdb.h>
 
 namespace ovm
 {

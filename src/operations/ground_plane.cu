@@ -16,7 +16,7 @@
 
 // OVM
 #include <openvdb_voxel_mapper/types.h>
-#include <openvdb_voxel_mapper/operations/operation_utils.h>
+#include <openvdb_voxel_mapper/operations/utils.h>
 
 namespace ovm::ops
 {

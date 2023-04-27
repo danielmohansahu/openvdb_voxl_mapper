@@ -15,7 +15,7 @@
 #include "types.h"
 #include "voxel_cloud.h"
 #include "conversions/ros1.h"
-#include "operations/ground_plane_extraction.h"
+#include "operations/ground_plane.h"
 
 namespace ovm::ros
 {
@@ -59,8 +59,8 @@ class ROS1VoxelCloud
   {
     // get timestamp of result
     // perform ground plane extraction via specified method
-    if (auto map = (gpu) ? ops::ground_plane_extraction_geometric_cuda(_cloud.grid())
-                         : ops::ground_plane_extraction_geometric(_cloud.grid())
+    if (auto map = (gpu) ? ops::min_z_ground_plane_cuda(_cloud.grid())
+                         : ops::min_z_ground_plane(_cloud.grid())
         ; map)
     {
       // extraction succeeded - convert to grid map
