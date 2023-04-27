@@ -57,6 +57,7 @@ TEST_F(TestOVMROS1, testMapConversions)
   // construct an OVM cloud from this Voxel Cloud
   auto opts = std::make_shared<ovm::Options>();
   opts->voxel_size = resolution;
+  opts->frame = "silly";
   ovm::ros::ROS1VoxelCloud cloud(gt_cloud, opts);
 
   // check some basic details
