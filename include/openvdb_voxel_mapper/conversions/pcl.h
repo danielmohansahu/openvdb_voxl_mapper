@@ -75,7 +75,7 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   std::vector<AttStampT> stamps(cloud.size(), cloud.header.stamp * 1e-6);
 
   // enable confidence attribute - each point gets a confidence value per label
-  std::vector<AttConfidenceT> confidences(cloud.size() * num_labels, 0.0);
+  std::vector<AttConfidenceT> confidences(cloud.size() * num_labels, NAN);
 
   // convert from PCL object to a series of vectors (XYZ, Attributes)
   for (size_t i = 0; i != cloud.size(); ++i)
