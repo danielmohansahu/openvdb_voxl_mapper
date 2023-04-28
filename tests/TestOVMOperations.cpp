@@ -12,6 +12,7 @@
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>
 #include <openvdb_voxel_mapper/operations/ground_plane.h>
+#include <openvdb_voxel_mapper/operations/semantics.h>
 
 // OVM Test
 #include "test_utilities.h"
@@ -82,22 +83,97 @@ TEST_F(TestOVMOperations, testGroundPlane)
   std::cout << "GPU_map: \n" << *gpu_map << std::endl;
 }
 
-// test label extraction operation
-TEST_F(TestOVMOperations, testLabelArgmax)
-{
-  // procedure: hardcoded PCL cloud with points in columns
-  //  verify resulting map size (?) position, and all cells
-
-  // I am a stub
-  EXPECT_TRUE(false);
-}
-
 // test label confidence projection via logodds
-TEST_F(TestOVMOperations, testLabelConfidenceLogodds)
+TEST_F(TestOVMOperations, testLogoddsConfidence)
 {
-  // procedure: hardcoded PCL cloud with points in columns
-  //  verify resulting map size (?) position, and all cells
+  // set up options with valid labels
+  auto opts = std::make_shared<ovm::Options>();
+  opts->voxel_size = 1.0;
+  opts->labels = std::vector<int>{opts->unknown, 0, 1, 195};
 
-  // I am a stub
-  EXPECT_TRUE(false);
+  // construct a ground truth PCL cloud with known labels and confidences
+  pcl::PointCloud<ovm::test::MyPointWithXYZLC> gt_cloud;
+  // a column with empty confidences
+  gt_cloud.emplace_back(0.0f, 0.0f, -1.0f, opts->unknown, 0.0);
+  gt_cloud.emplace_back(0.0f, 0.0f,  0.3f, 0, 0.0);
+  gt_cloud.emplace_back(0.0f, 0.0f, 10.0f, 1, 0.0);
+  gt_cloud.emplace_back(0.0f, 0.0f, 11.0f, 195, 0.0);
+
+  // a column with great confidences
+  gt_cloud.emplace_back(1.0f, 1.0f, 1.0f, 0, 1.0);
+  gt_cloud.emplace_back(1.0f, 1.0f, 2.0f, 1, 1.0);
+  gt_cloud.emplace_back(1.0f, 1.0f, 4.0f, 195, 1.0);
+
+  // a column with varying confidences of the same type
+  gt_cloud.emplace_back(2.0f, 2.0f, -1.0f, 195, 0.7);
+  gt_cloud.emplace_back(2.0f, 2.0f, -2.0f, 195, 0.3);
+  gt_cloud.emplace_back(2.0f, 2.0f, -4.0f, 195, 0.9);
+
+  // define ground truth maps
+  std::vector<Eigen::MatrixXf> gt_confidences;
+  {
+    // label opts->unknown
+    Eigen::MatrixXf first(3,3);
+    first << NAN, NAN, NAN,
+             NAN, NAN, NAN,
+             0.0, NAN, NAN;
+    gt_confidences.emplace_back(first);
+
+    // label 0
+    Eigen::MatrixXf second(3,3);
+    first << NAN, NAN, NAN,
+             NAN, 1.0, NAN,
+             0.0, NAN, NAN;
+    gt_confidences.emplace_back(second);
+
+    // label 1
+    Eigen::MatrixXf third(3,3);
+    first << NAN, NAN, NAN,
+             NAN, 1.0, NAN,
+             0.0, NAN, NAN;
+    gt_confidences.emplace_back(third);
+
+    // label 195
+    Eigen::MatrixXf fourth(3,3);
+    first << NAN, NAN, 0.9,
+             NAN, 1.0, NAN,
+             0.0, NAN, NAN;
+    gt_confidences.emplace_back(fourth);
+  }
+
+  // our ground truth label map is just 1D
+  //  note that there's no guarantee for an argmax which will get picked
+  Eigen::MatrixXi gt_labels(3,3);
+  gt_labels << opts->unknown, opts->unknown, 195,
+               opts->unknown, 0            , opts->unknown,
+               opts->unknown, opts->unknown, opts->unknown;
+
+  // convert to voxel cloud
+  ovm::VoxelCloud cloud(gt_cloud, opts);
+
+  // perform logodds aggregation
+  const auto confidence_maps = ovm::ops::semantic_projection_logodds(cloud);
+  ASSERT_TRUE(confidence_maps);
+  ASSERT_EQ(confidence_maps->size(), gt_confidences.size());
+  
+  // compare maps to our expected ground truth
+  for (size_t i = 0; i != gt_confidences.size(); ++i)
+  {
+    // compare this label's confidence map to our expected ground truth
+    const auto& gt = gt_confidences[i];
+    const auto& map = (*confidence_maps)[i];
+
+    ASSERT_EQ(gt.rows(), map.rows());
+    ASSERT_EQ(gt.cols(), map.cols());
+    EXPECT_TRUE(ovm::test::equal(gt, map));
+  }
+
+  // perform end-to-end argmax operation, which just returns the top label for each cell
+  const auto label_map = ovm::ops::semantic_projection_argmax(cloud);
+  ASSERT_TRUE(label_map);
+
+  // compare maps to our expected ground truth
+  ASSERT_EQ(label_map->cols(), gt_labels.cols());
+  ASSERT_EQ(label_map->rows(), gt_labels.rows());
+  EXPECT_TRUE(label_map->isApprox(gt_labels));
 }

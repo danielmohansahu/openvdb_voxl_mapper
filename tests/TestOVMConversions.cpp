@@ -71,52 +71,17 @@ TEST_F(TestOVMConversions, testPCLPointXYZRGBL)
   TestPCL<pcl::PointXYZRGBL>();
 }
 
-// semi-arbitrary custom point type
-struct MyPointWithXYZLC
-{
-  // data types
-  float x {0};
-  float y {0};
-  float z {0};
-  int label {0};
-  float confidence {0};
-
-  // constructors
-  MyPointWithXYZLC() = default;
-  MyPointWithXYZLC(float x_, float y_, float z_, int l = 0, float c = 0)
-   : x(x_), y(y_), z(z_), label(l), confidence(c) {}
-
-  // convenience equality operators
-  bool operator==(const MyPointWithXYZLC& other) const
-  {
-    const float eps = std::numeric_limits<float>::epsilon();
-    return (fabs(x - other.x) < eps) &&
-           (fabs(y - other.y) < eps) &&
-           (fabs(z - other.z) < eps) &&
-           (fabs(confidence - other.confidence) < eps) &&
-           (label == other.label);
-  }
-
-  bool operator==(const pcl::PointXYZ& other) const
-  {
-    const float eps = std::numeric_limits<float>::epsilon();
-    return (fabs(x - other.x) < eps) &&
-           (fabs(y - other.y) < eps) &&
-           (fabs(z - other.z) < eps);
-  }
-}; // struct MyPointWithXYZLC
-
 // test arbitrary point structures
 TEST_F(TestOVMConversions, testCustomPoint)
 {
-  TestPCL<MyPointWithXYZLC>();
+  TestPCL<ovm::test::MyPointWithXYZLC>();
 }
 
 // expected failures for certain cloud / label / confidence configuration
 TEST_F(TestOVMConversions, testLabelFailures)
 {
   // construct a ground truth PCL cloud with known labels
-  pcl::PointCloud<MyPointWithXYZLC> gt_cloud;
+  pcl::PointCloud<ovm::test::MyPointWithXYZLC> gt_cloud;
   gt_cloud.emplace_back(0.0f, 0.0f, 0.0f, -1, 0.0);
   gt_cloud.emplace_back(1.0f, 1.0f, 1.0f, 0, 0.35);
   gt_cloud.emplace_back(2.0f, 2.0f, 2.0f, 1, 0.55);
@@ -138,7 +103,7 @@ TEST_F(TestOVMConversions, testLabelFailures)
 #ifndef NDEBUG
   {
     // we should fail to construct a cloud with confidences outside [0,1.0]
-    pcl::PointCloud<MyPointWithXYZLC> bad_cloud;
+    pcl::PointCloud<ovm::test::MyPointWithXYZLC> bad_cloud;
     pcl::copyPointCloud(gt_cloud, bad_cloud);
     bad_cloud.emplace_back(4.0f, 4.0f, 4.0f, 195, 1.5);
     EXPECT_DEATH(ovm::VoxelCloud(bad_cloud, gt_opts), "Assertion");
@@ -152,7 +117,7 @@ TEST_F(TestOVMConversions, testLabelFailures)
     ovm::VoxelCloud simple_cloud(gt_cloud, simple_opts);
 
     // we should fail to convert this back to the original type, because we dropped the labels / confidences
-    EXPECT_THROW(ovm::conversions::to_pcl<MyPointWithXYZLC>(simple_cloud.grid(), simple_cloud.options()), std::runtime_error);
+    EXPECT_THROW(ovm::conversions::to_pcl<ovm::test::MyPointWithXYZLC>(simple_cloud.grid(), simple_cloud.options()), std::runtime_error);
 
     // but converting to a simpler point should succeed
     ovm::conversions::to_pcl<pcl::PointXYZ>(simple_cloud.grid(), simple_cloud.options());
@@ -167,7 +132,7 @@ TEST_F(TestOVMConversions, testSemantics)
   opts->labels = std::vector<int>{-1, 0, 1, 195};
 
   // construct a ground truth PCL cloud with known labels
-  pcl::PointCloud<MyPointWithXYZLC> gt_cloud;
+  pcl::PointCloud<ovm::test::MyPointWithXYZLC> gt_cloud;
   gt_cloud.emplace_back(0.0f, 0.0f, 0.0f, opts->unknown, 0.0);  // anything with 0 confidence will end up as unknown
   gt_cloud.emplace_back(1.0f, 1.0f, 1.0f, 0, 0.35);
   gt_cloud.emplace_back(1.0f, 1.0f, 1.0f, 1, 0.75);
@@ -178,7 +143,7 @@ TEST_F(TestOVMConversions, testSemantics)
   ovm::VoxelCloud ovm_cloud(gt_cloud, opts);
 
   // convert back to the same desired point type
-  const auto cloud = ovm::conversions::to_pcl<MyPointWithXYZLC>(ovm_cloud.grid(), ovm_cloud.options());
+  const auto cloud = ovm::conversions::to_pcl<ovm::test::MyPointWithXYZLC>(ovm_cloud.grid(), ovm_cloud.options());
   ASSERT_TRUE(cloud);
 
   // iterate through the cloud, making sure we find an equivalent point

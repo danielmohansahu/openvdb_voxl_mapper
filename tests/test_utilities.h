@@ -20,6 +20,41 @@ namespace ovm::test
 // default number of points to generate for a cloud
 #define DEFAULT_NUM_POINTS 10000
 
+// semi-arbitrary custom point type for testing
+struct MyPointWithXYZLC
+{
+  // data types
+  float x {0};
+  float y {0};
+  float z {0};
+  int label {0};
+  float confidence {0};
+
+  // constructors
+  MyPointWithXYZLC() = default;
+  MyPointWithXYZLC(float x_, float y_, float z_, int l = 0, float c = 0)
+   : x(x_), y(y_), z(z_), label(l), confidence(c) {}
+
+  // convenience equality operators
+  bool operator==(const MyPointWithXYZLC& other) const
+  {
+    const float eps = std::numeric_limits<float>::epsilon();
+    return (fabs(x - other.x) < eps) &&
+           (fabs(y - other.y) < eps) &&
+           (fabs(z - other.z) < eps) &&
+           (fabs(confidence - other.confidence) < eps) &&
+           (label == other.label);
+  }
+
+  bool operator==(const pcl::PointXYZ& other) const
+  {
+    const float eps = std::numeric_limits<float>::epsilon();
+    return (fabs(x - other.x) < eps) &&
+           (fabs(y - other.y) < eps) &&
+           (fabs(z - other.z) < eps);
+  }
+}; // struct MyPointWithXYZLC
+
 // construct a PCL Uniform Distribution random point generator
 template <typename PointT>
 auto uniform_generator(const float xmin = -100.0, const float xmax = 100.0,
