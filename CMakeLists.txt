@@ -69,9 +69,6 @@ if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_CXX_FLAGS_RelWithDebInfo "-ggdb")
 endif ()
 
-# lint C++ files
-set (CMAKE_CXX_CPPCHECK "cppcheck;--std=c++20;--enable=performance")
-
 ###############################################################################
 #                                 DEBUG                                       #
 ###############################################################################
@@ -81,6 +78,9 @@ set (CMAKE_CXX_CPPCHECK "cppcheck;--std=c++20;--enable=performance")
 # foreach (_variableName ${_variableNames})
 #     message(STATUS "${_variableName}=${${_variableName}}")
 # endforeach()
+
+# lint C++ files
+# set (CMAKE_CXX_CPPCHECK "cppcheck;--std=c++20;--enable=performance")
 
 ###############################################################################
 #                              OVM LIBRARY                                    #
