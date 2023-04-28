@@ -9,6 +9,7 @@
 
 // PCL
 #include <pcl/common/generate.h>
+#include <pcl/common/io.h>
 
 // OVM
 #include <openvdb_voxel_mapper/voxel_cloud.h>

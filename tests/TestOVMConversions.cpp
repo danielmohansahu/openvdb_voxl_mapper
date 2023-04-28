@@ -78,12 +78,12 @@ struct MyPointWithXYZLC
   float x {0};
   float y {0};
   float z {0};
-  size_t label {0};
+  int label {0};
   float confidence {0};
 
   // constructors
   MyPointWithXYZLC() = default;
-  MyPointWithXYZLC(float x_, float y_, float z_, size_t l = 0, float c = 0)
+  MyPointWithXYZLC(float x_, float y_, float z_, int l = 0, float c = 0)
    : x(x_), y(y_), z(z_), label(l), confidence(c) {}
 
   // convenience equality operators
@@ -126,38 +126,53 @@ TEST_F(TestOVMConversions, testLabelFailures)
   auto gt_opts = std::make_shared<ovm::Options>();
   gt_opts->labels = std::vector<int>{-1, 0, 1, 195};
 
+#ifndef NDEBUG
   {
     // we should fail to construct a cloud with missing labels
+    auto bad_opts = std::make_shared<ovm::Options>();
+    bad_opts->labels = std::vector<int>{0, 1, 195};
+    EXPECT_DEATH(ovm::VoxelCloud(gt_cloud, bad_opts), "Assertion");
   }
+#endif // NDEBUG
 
+#ifndef NDEBUG
   {
     // we should fail to construct a cloud with confidences outside [0,1.0]
+    pcl::PointCloud<MyPointWithXYZLC> bad_cloud;
+    pcl::copyPointCloud(gt_cloud, bad_cloud);
+    bad_cloud.emplace_back(4.0f, 4.0f, 4.0f, 195, 1.5);
+    EXPECT_DEATH(ovm::VoxelCloud(bad_cloud, gt_opts), "Assertion");
   }
+#endif // NDEBUG
 
   {
     // if we drop label support we can't convert back to a full resolution cloud
-  }
+    auto simple_opts = std::make_shared<ovm::Options>();
+    simple_opts->labels.clear();
+    ovm::VoxelCloud simple_cloud(gt_cloud, simple_opts);
 
-  {
-    // if our cloud doesn't have confidences we should end up with all default confidences
-  }
+    // we should fail to convert this back to the original type, because we dropped the labels / confidences
+    EXPECT_THROW(ovm::conversions::to_pcl<MyPointWithXYZLC>(simple_cloud.grid(), simple_cloud.options()), std::runtime_error);
 
-  EXPECT_TRUE(false);
+    // but converting to a simpler point should succeed
+    ovm::conversions::to_pcl<pcl::PointXYZ>(simple_cloud.grid(), simple_cloud.options());
+  }
 }
 
 // test constructing clouds with semantic information and verify that information gets retained
 TEST_F(TestOVMConversions, testSemantics)
 {
-  // construct a ground truth PCL cloud with known labels
-  pcl::PointCloud<MyPointWithXYZLC> gt_cloud;
-  gt_cloud.emplace_back(0.0f, 0.0f, 0.0f, -1, 0.0);
-  gt_cloud.emplace_back(1.0f, 1.0f, 1.0f, 0, 0.35);
-  gt_cloud.emplace_back(2.0f, 2.0f, 2.0f, 1, 0.55);
-  gt_cloud.emplace_back(3.0f, 3.0f, 3.0f, 195, 1.0);
-
   // set up options with valid labels
   auto opts = std::make_shared<ovm::Options>();
   opts->labels = std::vector<int>{-1, 0, 1, 195};
+
+  // construct a ground truth PCL cloud with known labels
+  pcl::PointCloud<MyPointWithXYZLC> gt_cloud;
+  gt_cloud.emplace_back(0.0f, 0.0f, 0.0f, opts->unknown, 0.0);  // anything with 0 confidence will end up as unknown
+  gt_cloud.emplace_back(1.0f, 1.0f, 1.0f, 0, 0.35);
+  gt_cloud.emplace_back(1.0f, 1.0f, 1.0f, 1, 0.75);
+  gt_cloud.emplace_back(2.0f, 2.0f, 2.0f, 1, 0.55);
+  gt_cloud.emplace_back(3.0f, 3.0f, 3.0f, 195, 1.0);
 
   // convert to voxel cloud
   ovm::VoxelCloud ovm_cloud(gt_cloud, opts);

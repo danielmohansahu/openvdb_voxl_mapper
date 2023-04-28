@@ -29,7 +29,7 @@ struct Options
 {
   float voxel_size {0.5};                   // voxel size, in meters
   AttConfidenceT default_confidence {1.0};  // confidence, if unsupplied
-  AttLabelT default_label {-1};             // label, if unsupplied
+  AttLabelT unknown {-1};                   // label, if unsupplied
   AttLabelT free_label {0};                 // label for free space, e.g. ray trace cleared
   std::vector<AttLabelT> ground_labels {};  // labels considered 'ground' for operations
   std::vector<AttLabelT> labels {};         // all supported labels

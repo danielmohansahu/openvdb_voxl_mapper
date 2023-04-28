@@ -125,7 +125,7 @@ openvdb::points::PointDataGrid::Ptr from_pcl(const pcl::PointCloud<PointT>& clou
   {
     // Append "confidence" attribute to the grid to hold the confidence. stride is 'num_labels', because each point has num_labels possible confidences
     appendAttribute(grid->tree(), ATT_CONFIDENCE, TypedAttributeArray<AttConfidenceT>::attributeType(), num_labels);
-    populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_CONFIDENCE, PointAttributeVector<AttConfidenceT>(confidences), num_labels);
+    populateAttribute(grid->tree(), pointIndexGrid->tree(), ATT_CONFIDENCE, PointAttributeVector<AttConfidenceT>(confidences, num_labels), num_labels);
   }
 
   // return constructed grid
@@ -183,8 +183,8 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
         assert (confidenceHandle);
 
         // extract the top label associated with this point, and possibly the confidence
-        AttConfidenceT max_confidence = -1.0;
-        size_t max_confidence_idx = 0;
+        AttConfidenceT max_confidence = 0.0;
+        size_t max_confidence_idx = num_labels;
         for (size_t i = 0; i != num_labels; ++i)
           if (const auto confidence = confidenceHandle->get(*index, i); confidence > max_confidence)
           {
@@ -192,7 +192,7 @@ std::optional<pcl::PointCloud<PointT>> to_pcl(const openvdb::points::PointDataGr
             max_confidence_idx = i;
           }
         // set the values
-        point.label = options->labels[max_confidence_idx];
+        point.label = (max_confidence_idx < num_labels) ? options->labels[max_confidence_idx] : options->unknown;
         if constexpr (HasConfidence<PointT>)
           point.confidence = max_confidence;
       }
