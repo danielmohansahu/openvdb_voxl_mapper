@@ -99,15 +99,41 @@ semantic_projection_logodds(const ovm::VoxelCloud& cloud)
 std::optional<Eigen::MatrixXi>
 semantic_projection_argmax(const ovm::VoxelCloud& cloud)
 {
-  // @TODO:
-  //  - get array of confidences per cell
-  //  - get array index of top confidence per cell
-  //  - map from array index to label
-
-  if (auto confidences = semantic_projection_logodds(cloud); confidences)
+  // get a vector of confidences associated with each class for each 2D cell of the Voxel Grid
+  if (auto confidences = semantic_projection_logodds(cloud); (confidences && confidences->size() != 0))
   {
-    // I am a stub.
-    return std::nullopt;
+    // supported labels and dimensions
+    const auto& opts = cloud.options();
+    const size_t rows = (*confidences)[0].rows();
+    const size_t cols = (*confidences)[0].cols();
+
+    // sanity checks
+    assert(opts->labels.size() == confidences->size());
+
+    // initialize comparison objects - index of top confidence and top confidence
+    Eigen::MatrixXf top_conf = Eigen::MatrixXf::Constant(rows, cols, -1.0f);
+    Eigen::MatrixXi top_idx  = Eigen::MatrixXi::Constant(rows, cols, -1);
+
+    // iterate through each label's confidence per-cell, updating max
+    for (size_t i = 0; i != confidences->size(); ++i)
+    {
+      // access this label's confidence map
+      const auto& label_conf = (*confidences)[i];
+
+      // mark the label index for these changed cells
+      const Eigen::MatrixXi constant = Eigen::MatrixXi::Constant(rows, cols, i);
+      top_idx = (label_conf.array() > top_conf.array()).select(constant, top_idx);
+
+      // update confidences (this should handle NaN cells correctly)
+      top_conf = (label_conf.array() > top_conf.array()).select(label_conf, top_conf);
+      assert(top_conf.array().isNaN().count() == 0);
+    }
+  
+    // update result to return the actual labels, not their indices
+    const Eigen::MatrixXi unknown_idx   = Eigen::MatrixXi::Constant(rows, cols, -1);
+    const Eigen::MatrixXi unknown_label = Eigen::MatrixXi::Constant(rows, cols, opts->unknown);
+    const auto labelmap = [labels = opts->labels] (const int idx) -> int { return labels[idx]; };
+    return (top_idx.array() == unknown_idx.array()).select(unknown_label, top_idx.unaryExpr(labelmap));
   }
 
   // extraction failed

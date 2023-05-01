@@ -178,6 +178,10 @@ TEST_F(TestOVMOperations, testLogoddsConfidence)
   ASSERT_TRUE(label_map);
 
   // compare maps to our expected ground truth
+  std::cout << "comparing labels (ground truth): \n";
+  std::cout << gt_labels << std::endl;
+  std::cout << "to resulting label map: \n";
+  std::cout << *label_map << std::endl;
   ASSERT_EQ(label_map->cols(), gt_labels.cols());
   ASSERT_EQ(label_map->rows(), gt_labels.rows());
   EXPECT_TRUE(label_map->isApprox(gt_labels));
