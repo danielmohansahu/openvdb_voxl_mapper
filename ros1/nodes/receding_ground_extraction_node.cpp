@@ -47,6 +47,7 @@ int main(int argc, char ** argv)
   const double horizon = pnh.param("horizon", 2.0);
   opts->verbose = pnh.param("verbose", false);
   opts->voxel_size = pnh.param("voxel_size", 0.5);
+  opts->frame = fixed_frame;
 
   // try to configure ROS logger based on desired verbosity
   if (opts->verbose && ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
