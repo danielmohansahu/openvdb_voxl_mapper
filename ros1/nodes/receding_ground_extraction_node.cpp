@@ -92,7 +92,7 @@ int main(int argc, char ** argv)
       // extract ground plane
       // note: we still do this even if we didn't merge incoming data
       ROS_DEBUG("Extracting ground plane...");
-      if (auto map = mapper.ground_plane(); map)
+      if (auto map = mapper.maps(); map)
         map_pub.publish(*map);
       else
         ROS_ERROR("Failed to extract ground plane.");

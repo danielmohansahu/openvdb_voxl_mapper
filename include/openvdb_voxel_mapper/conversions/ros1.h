@@ -54,40 +54,40 @@ std::optional<sensor_msgs::PointCloud2> to_ros(const VoxelCloud& cloud,
   return std::nullopt;
 }
 
-// convert a Eigen::MatrixXf to a ROS grid map
-std::optional<grid_map_msgs::GridMap> to_ros(const Eigen::MatrixXf& original_map,
-                                             const std::shared_ptr<const Options>& opts,
-                                             const openvdb::Vec3d& center,
-                                             const std::string& layer,
-                                             const double stamp)
+// construct an empty grid_map::GridMap from metadata
+std::optional<grid_map::GridMap> to_ros(const std::shared_ptr<const Options>& opts,
+                                        const openvdb::Vec3d& center,
+                                        const size_t rows, const size_t cols,
+                                        const double stamp)
 {
-  // compile time sanity checks
-  static_assert(std::is_same_v<grid_map::GridMap::Matrix, Eigen::MatrixXf>, "Internal Map type mismatch.");
-
-  // handle edge cases
-  if (original_map.rows() == 0 || original_map.cols() == 0)
-    return std::nullopt;
-
-  // grid map has a different ordering convention - reorder ours
-  const auto map = original_map.transpose().colwise().reverse();
-
   // initialize a grid_map::GridMap object
   grid_map::GridMap grid;
 
   // set metadata, including convention conversions (e.g. seconds -> nanoseconds)
-  const auto length = grid_map::Length(map.rows() * opts->voxel_size, map.cols() * opts->voxel_size);
+  const auto length = grid_map::Length(rows * opts->voxel_size, cols * opts->voxel_size);
   const auto position = grid_map::Position(center.x(), center.y());
   grid.setGeometry(length, opts->voxel_size, position);
   grid.setFrameId(opts->frame);
   grid.setTimestamp(stamp * 1e9);
 
+  // return empty grid
+  return grid;
+}
+
+// convert a Eigen::MatrixXf to a ROS grid map
+void add_layer(grid_map::GridMap& grid, const Eigen::MatrixXf& original_map, const std::string& layer)
+{
+  // compile time sanity checks
+  static_assert(std::is_same_v<grid_map::GridMap::Matrix, Eigen::MatrixXf>, "Internal Map type mismatch.");
+
+  // grid map has a different ordering convention - reorder ours and add it
+  const auto map = original_map.transpose().colwise().reverse();
+
+  // sanity check inputs
+  assert(map.rows() == grid.getSize()(0) && map.cols() == grid.getSize()(1));
+
   // add actual grid data; note that we transpose due to a convention difference
   grid.add(layer, map);
-
-  // convert to a grid_map_msg and return
-  grid_map_msgs::GridMap msg;
-  grid_map::GridMapRosConverter::toMessage(grid, msg);
-  return msg;
 }
 
 } // namespace ovm::conversions

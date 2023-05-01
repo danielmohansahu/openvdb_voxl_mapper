@@ -64,7 +64,7 @@ TEST_F(TestOVMROS1, testMapConversions)
   EXPECT_EQ(cloud.size(), gt_cloud.height * gt_cloud.width);
 
   // extract ground plane and convert to another grid_map::GridMap
-  const auto map_msg = cloud.ground_plane(/*use_gpu=*/false, "elevation");
+  const auto map_msg = cloud.maps("elevation");
   ASSERT_TRUE(map_msg);
   grid_map::GridMap map;
   ASSERT_TRUE(grid_map::GridMapRosConverter::fromMessage(*map_msg, map));

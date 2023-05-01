@@ -16,7 +16,7 @@
 #include "voxel_cloud.h"
 #include "conversions/ros1.h"
 #include "operations/ground_plane.h"
-
+#include "operations/semantics.h"
 namespace ovm::ros
 {
 
@@ -54,22 +54,39 @@ class ROS1VoxelCloud
   }
 
   // extract the ground plane of the current cloud
-  std::optional<grid_map_msgs::GridMap> ground_plane(const bool gpu = false,
-                                                     const std::string& layer_name = "elevation") const
+  std::optional<grid_map_msgs::GridMap> maps(const std::string& ground_layer = "elevation",
+                                             const std::string& label_layer  = "label",
+                                             const std::vector<std::string>& labels = std::vector<std::string>(),
+                                             const bool gpu = false) const
   {
-    // get timestamp of result
-    // perform ground plane extraction via specified method
-    if (auto map = (gpu) ? ops::min_z_ground_plane_cuda(_cloud.grid())
-                         : ops::min_z_ground_plane(_cloud.grid())
-        ; map)
-    {
-      // extraction succeeded - convert to grid map
-      const auto [lower, stamp] = time_bounds();
-      const auto center = _cloud.grid()->transform().indexToWorld(_cloud.grid()->evalActiveVoxelBoundingBox().getCenter());
-      return conversions::to_ros(*map, _opts, center, layer_name, stamp);
-    }
-    // extraction failed
-    return std::nullopt;
+    // sanity check inputs
+    if (labels.size() != 0 && labels.size() != _opts->labels.size())
+      throw std::runtime_error("Invalid number of labels received.");
+
+    // construct resulting map
+    const auto [lower, stamp] = time_bounds();
+    const auto bbox = _cloud.grid()->transform().indexToWorld(_cloud.grid()->evalActiveVoxelBoundingBox());
+    auto grid = conversions::to_ros(_opts, bbox.getCenter(), bbox.extents().x(), bbox.extents().y(), stamp);
+    
+    // check if conversion succeeded
+    if (!grid)
+      return std::nullopt;
+
+    // attempt to add ground plane
+    if (auto ground = (gpu) ? ops::min_z_ground_plane_cuda(_cloud.grid()) : ops::min_z_ground_plane(_cloud.grid()) ; ground)
+      conversions::add_layer(*grid, *ground, ground_layer);
+
+    // attempt to add label layer
+    if (auto label = ops::semantic_projection_argmax(_cloud); label)
+      conversions::add_layer(*grid, label->cast<float>(), label_layer);
+
+    //  attempt to add per-label confidences
+    // @TODO!
+
+    // convert to a grid_map_msg and return
+    grid_map_msgs::GridMap msg;
+    grid_map::GridMapRosConverter::toMessage(*grid, msg);
+    return msg;
   }
 
  public:
