@@ -1,4 +1,6 @@
 /* Operations to extract label and confidence information from the grid.
+ *
+ * @TODO there are a lot of opportunities to speed this implementation up.
  */
 
 #pragma once
@@ -6,6 +8,7 @@
 // STL
 #include <optional>
 #include <array>
+#include <algorithm>
 
 // OVM
 #include "../types.h"
@@ -18,12 +21,25 @@
 namespace ovm::ops
 {
 
+// log odds conversion from confidence (which we're treating as probability...)
+static inline float logodds(float p)
+{
+  // clamp inputs to avoid numerical problems
+  p = std::clamp(p, 1e-5f, 1.0f - 1e-5f);
+  return std::log(p / (1 - p));
+}
+
+// conversion from log odds to probability (which we're treating as confidence...)
+static inline float invlogodds(const float lo)
+{
+  const auto odds = std::exp(lo);
+  return odds / (1 + odds);
+}
+
 // aggregate columns of voxels in the grid via logodds and return an array with class confidence per cell
 std::optional<std::vector<Eigen::MatrixXf>>
 semantic_projection_logodds(const ovm::VoxelCloud& cloud)
 {
-  // @TODO make this more efficent
-
   using namespace openvdb::points;
 
   // handle edge cases
@@ -63,13 +79,17 @@ semantic_projection_logodds(const ovm::VoxelCloud& cloud)
       for (size_t i = 0; i != num_labels; ++i)
         if (const AttConfidenceT confidence = handle.get(*idx, i); !std::isnan(confidence))
         {
-          // @TODO logodds!
-          // get current and new confidence value
+          // get current and new confidence value in log-odds
+          const auto conf = logodds(confidence);
           auto& val = result[i].coeffRef(row, col);
-          val = std::isnan(val) ? confidence : std::max(val, confidence);
+          val = std::isnan(val) ? conf : (conf + val);
         }
     }
   }
+
+  // aggregation and projection was done in log-odds; reverse before returning
+  for (auto& mat : result)
+    mat = mat.array().isNaN().select(mat, mat.unaryExpr(&invlogodds));
 
   // return suite of updated maps
   return result;

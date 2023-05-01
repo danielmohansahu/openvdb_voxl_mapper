@@ -94,7 +94,7 @@ TEST_F(TestOVMOperations, testLogoddsConfidence)
   // construct a ground truth PCL cloud with known labels and confidences
   pcl::PointCloud<ovm::test::MyPointWithXYZLC> gt_cloud;
   // a column with empty confidences
-  gt_cloud.emplace_back(0.0f, 0.0f, -1.0f, opts->unknown, 0.0);
+  gt_cloud.emplace_back(0.0f, 0.0f, -1.0f, opts->unknown, 0.1);
   gt_cloud.emplace_back(0.0f, 0.0f,  0.3f, 0, 0.0);
   gt_cloud.emplace_back(0.0f, 0.0f, 10.0f, 1, 0.0);
   gt_cloud.emplace_back(0.0f, 0.0f, 11.0f, 195, 0.0);
@@ -105,7 +105,7 @@ TEST_F(TestOVMOperations, testLogoddsConfidence)
   gt_cloud.emplace_back(1.0f, 1.0f, 4.0f, 195, 1.0);
 
   // a column with varying confidences of the same type
-  gt_cloud.emplace_back(2.0f, 2.0f, -1.0f, 195, 0.7);
+  gt_cloud.emplace_back(2.0f, 2.0f, -1.0f, 195, 0.8);
   gt_cloud.emplace_back(2.0f, 2.0f, -2.0f, 195, 0.3);
   gt_cloud.emplace_back(2.0f, 2.0f, -4.0f, 195, 0.9);
 
@@ -116,28 +116,28 @@ TEST_F(TestOVMOperations, testLogoddsConfidence)
     Eigen::MatrixXf first(3,3);
     first << NAN, NAN, NAN,
              NAN, NAN, NAN,
-             0.0, NAN, NAN;
+             0.1, NAN, NAN;
     gt_confidences.emplace_back(first);
 
     // label 0
     Eigen::MatrixXf second(3,3);
-    first << NAN, NAN, NAN,
-             NAN, 1.0, NAN,
-             0.0, NAN, NAN;
+    second << NAN, NAN, NAN,
+              NAN, 1.0, NAN,
+              0.0, NAN, NAN;
     gt_confidences.emplace_back(second);
 
     // label 1
     Eigen::MatrixXf third(3,3);
-    first << NAN, NAN, NAN,
+    third << NAN, NAN, NAN,
              NAN, 1.0, NAN,
              0.0, NAN, NAN;
     gt_confidences.emplace_back(third);
 
     // label 195
     Eigen::MatrixXf fourth(3,3);
-    first << NAN, NAN, 0.9,
-             NAN, 1.0, NAN,
-             0.0, NAN, NAN;
+    fourth << NAN, NAN, 0.9391,
+              NAN, 1.0, NAN,
+              0.0, NAN, NAN;
     gt_confidences.emplace_back(fourth);
   }
 
@@ -157,15 +157,20 @@ TEST_F(TestOVMOperations, testLogoddsConfidence)
   ASSERT_EQ(confidence_maps->size(), gt_confidences.size());
   
   // compare maps to our expected ground truth
-  for (size_t i = 0; i != gt_confidences.size(); ++i)
+  for (size_t i = 0; i != confidence_maps->size(); ++i)
   {
     // compare this label's confidence map to our expected ground truth
-    const auto& gt = gt_confidences[i];
-    const auto& map = (*confidence_maps)[i];
+    const auto gt = gt_confidences[i];
+    const auto map = (*confidence_maps)[i];
+
+    std::cout << "comparing (ground truth): \n";
+    std::cout << gt << std::endl;
+    std::cout << "to resulting map: \n";
+    std::cout << map << std::endl;
 
     ASSERT_EQ(gt.rows(), map.rows());
     ASSERT_EQ(gt.cols(), map.cols());
-    EXPECT_TRUE(ovm::test::equal(gt, map));
+    EXPECT_TRUE(ovm::test::equal(gt, map, 1e-4f));
   }
 
   // perform end-to-end argmax operation, which just returns the top label for each cell
