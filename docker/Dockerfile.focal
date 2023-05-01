@@ -38,6 +38,8 @@ RUN apt-get update \
       freeglut3-dev \
       libeigen3-dev \
       libpcl-dev \
+      libboost-all-dev \
+      libtbb-dev \
       g++-10 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,25 +51,9 @@ RUN python3 -m pip install --upgrade pip \
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10
 
-# install boost (default Ubuntu distribution is too low)
-WORKDIR /tmp
-RUN wget -nv https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz
-RUN tar -xzf boost_1_81_0.tar.gz \
-    && cd boost_1_81_0 \
-    && ./bootstrap.sh \
-    && ./b2 install
-
-# install TBB (default Ubuntu distribution is too low)
-RUN git clone https://github.com/oneapi-src/oneTBB.git -b v2021.8.0
-RUN mkdir oneTBB/build \
-    && cd oneTBB/build \
-    && cmake -DTBB_TEST=OFF .. \
-    && cmake --build . \
-    && cmake --install .
-
 # clone and build openvdb
 WORKDIR /opt
-RUN git clone https://github.com/AcademySoftwareFoundation/openvdb.git -b v10.0.1
+RUN git clone https://github.com/AcademySoftwareFoundation/openvdb.git -b v9.1.0
 RUN mkdir openvdb/build \
     && cd openvdb/build \
     && cmake -DOPENVDB_BUILD_NANOVDB=ON \

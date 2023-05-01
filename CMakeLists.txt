@@ -17,7 +17,7 @@ option (OVM_BUILD_BENCHMARK "Build benchmark executables." ON)
 
 # locate required dependencies
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-find_package (OpenVDB 10.0.1 REQUIRED COMPONENTS openvdb nanovdb)
+find_package (OpenVDB 9.1.0 REQUIRED COMPONENTS openvdb nanovdb)
 find_package (Eigen3 3.3.7 REQUIRED NO_MODULE)
 find_package (PCL 1.10.0 REQUIRED COMPONENTS common)
 
