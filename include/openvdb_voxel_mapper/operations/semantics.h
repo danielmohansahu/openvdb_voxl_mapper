@@ -22,13 +22,57 @@ namespace ovm::ops
 std::optional<std::vector<Eigen::MatrixXf>>
 semantic_projection_logodds(const ovm::VoxelCloud& cloud)
 {
-  // @TODO
-  //  - iterate through voxels
-  //  - iterate through classes in voxel
-  //  - logodds aggregate class confidence of each point in the voxel to the cell at that XY index
+  // @TODO make this more efficent
 
-  // I am a stub.
-  return std::nullopt;
+  using namespace openvdb::points;
+
+  // handle edge cases
+  if (cloud.empty())                          // no data
+    return std::nullopt;
+  if (cloud.options()->labels.size() == 0)     // no labels
+    return std::nullopt;
+
+  // @TODO check if confidence attribute exists!
+
+  // access grid and options
+  const auto& grid = cloud.grid();
+  const auto& opts = cloud.options();
+
+  // useful named constants
+  const size_t num_labels = opts->labels.size();
+
+  // initialize output map dimensions and pose from the grid's bounding box
+  std::vector<Eigen::MatrixXf> result; result.reserve(num_labels);
+  const auto bbox = grid->evalActiveVoxelBoundingBox();
+  for (size_t i = 0; i != num_labels; ++i)
+    result.emplace_back(Eigen::MatrixXf::Constant(bbox.dim().y(), bbox.dim().x(), NAN));
+
+  // Iterate over all the leaf nodes in the grid.
+  for (auto leaf = grid->tree().cbeginLeaf(); leaf; ++leaf)
+  {
+    // Create read-only AttributeHandles to access the XYZ position and confidence data per point
+    const AttributeHandle<AttConfidenceT> handle(leaf->constAttributeArray(ATT_CONFIDENCE));
+
+    // Iterate over the point indices in the leaf.
+    for (auto idx = leaf->beginIndexOn(); idx; ++idx)
+    {
+      // get the index of this voxel in the corresponding grid
+      const auto [row, col] = idx_to_rc(idx.getCoord().x(), idx.getCoord().y(), bbox.min().x(), bbox.max().y());
+
+      // iterate through all the label confidences, updating the underlying grid
+      for (size_t i = 0; i != num_labels; ++i)
+        if (const AttConfidenceT confidence = handle.get(*idx, i); !std::isnan(confidence))
+        {
+          // @TODO logodds!
+          // get current and new confidence value
+          auto& val = result[i].coeffRef(row, col);
+          val = std::isnan(val) ? confidence : std::max(val, confidence);
+        }
+    }
+  }
+
+  // return suite of updated maps
+  return result;
 }
 
 // return the argmax label for each cell based on their aggregate confidence
