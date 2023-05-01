@@ -65,8 +65,9 @@ class ROS1VoxelCloud
 
     // construct resulting map
     const auto [lower, stamp] = time_bounds();
-    const auto bbox = _cloud.grid()->transform().indexToWorld(_cloud.grid()->evalActiveVoxelBoundingBox());
-    auto grid = conversions::to_ros(_opts, bbox.getCenter(), bbox.extents().x(), bbox.extents().y(), stamp);
+    const auto bbox = _cloud.grid()->evalActiveVoxelBoundingBox();
+    const auto center = _cloud.grid()->transform().indexToWorld(bbox.getCenter());
+    auto grid = conversions::to_ros(_opts, center, bbox.extents().x(), bbox.extents().y(), stamp);
     
     // check if conversion succeeded
     if (!grid)
