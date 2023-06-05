@@ -9,7 +9,6 @@ project (openvdb_voxel_mapper LANGUAGES CXX CUDA)
 include(CMakeDependentOption)
 option (OVM_BUILD_ROS1 "Enable ROS1 bindings." ON)
 option (OVM_BUILD_TESTS "Build and run unit tests." ON)
-option (OVM_BUILD_BENCHMARK "Build benchmark executables." ON)
 
 ###############################################################################
 #                 DEPENDENCIES & GLOBAL CONFIGURATION                         #
@@ -138,14 +137,6 @@ endif (OVM_BUILD_ROS1)
 if (OVM_BUILD_TESTS)
   add_subdirectory(tests)
 endif (OVM_BUILD_TESTS)
-
-###############################################################################
-#                               BENCHMARK                                     #
-###############################################################################
-
-if (OVM_BUILD_BENCHMARK)
-  add_subdirectory(benchmark)
-endif (OVM_BUILD_BENCHMARK)
 
 ###############################################################################
 #                                INSTALL                                      #
